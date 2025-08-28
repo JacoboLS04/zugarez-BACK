@@ -29,6 +29,24 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserEntityService {
+    // Verifica la contraseña usando el PasswordEncoder
+    public boolean checkPassword(UserEntity user, String rawPassword) {
+        return passwordEncoder.matches(rawPassword, user.getPassword());
+    }
+
+    // Genera el JWT directamente desde el usuario
+    public JwtTokenDto loginByUser(UserEntity user) {
+        // Crear UserPrincipal desde el usuario
+        UserPrincipal userPrincipal = UserPrincipal.build(user);
+        
+        // Crear Authentication directamente sin validar contraseña
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+            userPrincipal, null, userPrincipal.getAuthorities());
+        
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String token = jwtProvider.generateToken(authentication);
+        return new JwtTokenDto(token, user);
+    }
     @Autowired
     EmailService emailService;
     @Autowired

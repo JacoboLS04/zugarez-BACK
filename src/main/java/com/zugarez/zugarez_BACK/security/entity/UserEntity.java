@@ -3,6 +3,7 @@ package com.zugarez.zugarez_BACK.security.entity;
 import com.zugarez.zugarez_BACK.security.enums.RoleEnum;
 import jakarta.persistence.*;
 import java.util.List;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -12,6 +13,12 @@ public class UserEntity {
 
     @Column(name = "verification_token")
     private String verificationToken;
+    
+    @Column(name = "login_code")
+    private String loginCode;
+    
+    @Column(name = "login_code_expiry")
+    private LocalDateTime loginCodeExpiry;
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
@@ -28,7 +35,7 @@ public class UserEntity {
     public UserEntity() {
     }
 
-    public UserEntity(int id, String username, String email, String password, List<RoleEnum> roles, boolean verified, String verificationToken) {
+    public UserEntity(int id, String username, String email, String password, List<RoleEnum> roles, boolean verified, String verificationToken, String loginCode, LocalDateTime loginCodeExpiry) {
         this.id = id;
         this.username = username;
         this.email = email;
@@ -36,6 +43,8 @@ public class UserEntity {
         this.roles = roles;
         this.verified = verified;
         this.verificationToken = verificationToken;
+        this.loginCode = loginCode;
+        this.loginCodeExpiry = loginCodeExpiry;
     }
     public boolean isVerified() {
         return verified;
@@ -51,6 +60,22 @@ public class UserEntity {
 
     public void setVerificationToken(String verificationToken) {
         this.verificationToken = verificationToken;
+    }
+
+    public String getLoginCode() {
+        return loginCode;
+    }
+
+    public void setLoginCode(String loginCode) {
+        this.loginCode = loginCode;
+    }
+
+    public LocalDateTime getLoginCodeExpiry() {
+        return loginCodeExpiry;
+    }
+
+    public void setLoginCodeExpiry(LocalDateTime loginCodeExpiry) {
+        this.loginCodeExpiry = loginCodeExpiry;
     }
 
 
