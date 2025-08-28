@@ -2,11 +2,15 @@ package com.zugarez.zugarez_BACK.security.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import org.hibernate.validator.constraints.NotEmpty;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
-
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class CreateUserDto {
 
     @NotBlank(message = "El nombre de usuario es obligatorio")
@@ -17,16 +21,6 @@ public class CreateUserDto {
     @NotBlank(message = "La contraseña es obligatoria")
     private String password;
     List<String> roles = new ArrayList<>();
-
-    public CreateUserDto() {
-    }
-
-    public CreateUserDto(String username, String email, String password, List<String> roles) {
-        this.username = username;
-        this.email = email;
-        this.password = password;
-        this.roles = roles;
-    }
 
     public String getUsername() {
         return username;

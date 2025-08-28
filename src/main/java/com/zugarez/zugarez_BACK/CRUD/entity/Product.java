@@ -12,17 +12,26 @@ public class Product {
 
     private String name;
     private double price;
+    private String urlImage;
 
 
-    public Product(int id, String name, double price) {
+    public Product(int id, String name, double price , String urlImage) {
         this.id = id;
         this.name = name;
         this.price = price;
+        this.urlImage = urlImage;
     }
 
     public Product() {
     }
 
+    public String getUrlImage() {
+        return urlImage;
+    }
+
+    public void setUrlImage(String urlImage) {
+        this.urlImage = urlImage;
+    }
 
     public int getId() {
         return id;

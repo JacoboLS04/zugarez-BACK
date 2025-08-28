@@ -31,6 +31,9 @@ public class ProductService {
         Product product = new Product();
         product.setName(dto.getName());
         product.setPrice(dto.getPrice());
+        product.setUrlImage(dto.getUrlImage());
+        System.out.println("Se intenta guardar el producto: " + dto.getUrlImage());
+
         return productRepository.save(product);
     }
 

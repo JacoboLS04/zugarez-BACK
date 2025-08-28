@@ -2,6 +2,7 @@ package com.zugarez.zugarez_BACK.CRUD.dto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import lombok.Setter;
 
 public class ProductDto {
 
@@ -9,13 +10,21 @@ public class ProductDto {
     private String name;
     @Min(value = 0, message = "El precio del producto debe ser mayor o igual a 0")
     private double price;
+    @NotBlank(message = "Debe ir una url de la imagen")
+    private String urlImage;
 
     public ProductDto() {
     }
 
-    public ProductDto(String name, double price) {
+    public ProductDto(String name, double price , String urlImage) {
         this.name = name;
         this.price = price;
+        this.urlImage = urlImage;
+
+    }
+
+    public String getUrlImage() {
+        return urlImage;
     }
 
     public String getName() {
