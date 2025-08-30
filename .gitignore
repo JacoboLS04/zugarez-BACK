@@ -31,3 +31,11 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Monitoring Data ###
+monitoring/
+prometheus-data/
+grafana-data/
+loki-data/
+*.log
+logs/

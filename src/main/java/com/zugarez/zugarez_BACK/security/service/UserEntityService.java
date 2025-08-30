@@ -1,7 +1,6 @@
 package com.zugarez.zugarez_BACK.security.service;
 
 import com.zugarez.zugarez_BACK.global.exceptions.AttributeException;
-import com.zugarez.zugarez_BACK.global.utils.Operations;
 import com.zugarez.zugarez_BACK.security.dto.CreateUserDto;
 import com.zugarez.zugarez_BACK.security.dto.JwtTokenDto;
 import com.zugarez.zugarez_BACK.security.dto.LoginUserDto;
@@ -9,6 +8,8 @@ import com.zugarez.zugarez_BACK.security.entity.UserEntity;
 import com.zugarez.zugarez_BACK.security.enums.RoleEnum;
 import com.zugarez.zugarez_BACK.security.jwt.JwtProvider;
 import com.zugarez.zugarez_BACK.security.repository.UserEntityRepository;
+// import io.micrometer.core.instrument.Counter;
+// import io.micrometer.core.instrument.Timer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -29,6 +30,28 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserEntityService {
+
+    @Autowired
+    EmailService emailService;
+    
+    @Autowired
+    UserEntityRepository userEntityRepository;
+
+    @Autowired
+    PasswordEncoder passwordEncoder;
+
+    // @Autowired
+    // private Counter userLoginCounter;
+
+    // @Autowired
+    // private Timer authenticationTimer;
+
+    @Autowired
+    JwtProvider jwtProvider;
+
+    @Autowired
+    AuthenticationManager authenticationManager;
+
     // Verifica la contraseña usando el PasswordEncoder
     public boolean checkPassword(UserEntity user, String rawPassword) {
         return passwordEncoder.matches(rawPassword, user.getPassword());
@@ -45,21 +68,9 @@ public class UserEntityService {
         
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String token = jwtProvider.generateToken(authentication);
+        // userLoginCounter.increment();
         return new JwtTokenDto(token, user);
     }
-    @Autowired
-    EmailService emailService;
-    @Autowired
-    UserEntityRepository userEntityRepository;
-
-    @Autowired
-    PasswordEncoder passwordEncoder;
-
-    @Autowired
-    JwtProvider jwtProvider;
-
-    @Autowired
-    AuthenticationManager authenticationManager;
 
     public UserEntity create(CreateUserDto dto) throws AttributeException {
         if (dto.getUsername() == null || dto.getUsername().trim().isEmpty())
@@ -124,36 +135,42 @@ public class UserEntityService {
     }
 
     public JwtTokenDto login(LoginUserDto dto){
-        System.out.println("=== INTENTO DE LOGIN ===");
-        System.out.println("Username: " + dto.getUsername());
-        System.out.println("Password recibida: " + dto.getPassword());
-        boolean userExists = userEntityRepository.existsByUsername(dto.getUsername());
-        System.out.println("Usuario existe en BD: " + userExists);
-        UserEntity user = null;
-        if (userExists) {
-            user = userEntityRepository.findByUsername(dto.getUsername()).orElse(null);
-            if (user != null) {
-                if (!user.isVerified()) {
-                    throw new RuntimeException("Usuario no verificado. Revisa tu correo electrónico.");
-                }
-                System.out.println("Usuario encontrado - ID: " + user.getId());
-                System.out.println("Username en BD: " + user.getUsername());
-                System.out.println("Password encriptada en BD: " + user.getPassword());
-                System.out.println("Roles: " + user.getRoles());
-            }
-        }
+        // Timer.Sample sample = Timer.start();
         try {
-            Authentication authentication =
-                    authenticationManager.authenticate(
-                            new UsernamePasswordAuthenticationToken(dto.getUsername(), dto.getPassword()));
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            String token = jwtProvider.generateToken(authentication);
-            System.out.println("Login exitoso - Token generado: " + token.substring(0, 20) + "...");
-            JwtTokenDto response = new JwtTokenDto(token, user);
-            return response;
-        } catch (Exception e) {
-            System.out.println("Error en autenticación: " + e.getMessage());
-            throw e;
+            System.out.println("=== INTENTO DE LOGIN ===");
+            System.out.println("Username: " + dto.getUsername());
+            System.out.println("Password recibida: " + dto.getPassword());
+            boolean userExists = userEntityRepository.existsByUsername(dto.getUsername());
+            System.out.println("Usuario existe en BD: " + userExists);
+            UserEntity user = null;
+            if (userExists) {
+                user = userEntityRepository.findByUsername(dto.getUsername()).orElse(null);
+                if (user != null) {
+                    if (!user.isVerified()) {
+                        throw new RuntimeException("Usuario no verificado. Revisa tu correo electrónico.");
+                    }
+                    System.out.println("Usuario encontrado - ID: " + user.getId());
+                    System.out.println("Username en BD: " + user.getUsername());
+                    System.out.println("Password encriptada en BD: " + user.getPassword());
+                    System.out.println("Roles: " + user.getRoles());
+                }
+            }
+            try {
+                Authentication authentication =
+                        authenticationManager.authenticate(
+                                new UsernamePasswordAuthenticationToken(dto.getUsername(), dto.getPassword()));
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                String token = jwtProvider.generateToken(authentication);
+                System.out.println("Login exitoso - Token generado: " + token.substring(0, 20) + "...");
+                JwtTokenDto response = new JwtTokenDto(token, user);
+                // userLoginCounter.increment();
+                return response;
+            } catch (Exception e) {
+                System.out.println("Error en autenticación: " + e.getMessage());
+                throw e;
+            }
+        } finally {
+            // sample.stop(authenticationTimer);
         }
     }
 

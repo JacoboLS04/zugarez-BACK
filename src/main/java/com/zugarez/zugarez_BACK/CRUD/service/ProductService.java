@@ -5,7 +5,9 @@ import com.zugarez.zugarez_BACK.CRUD.entity.Product;
 import com.zugarez.zugarez_BACK.CRUD.repository.ProductRepository;
 import com.zugarez.zugarez_BACK.global.exceptions.AttributeException;
 import com.zugarez.zugarez_BACK.global.exceptions.ResourceNotFoundException;
-import com.zugarez.zugarez_BACK.global.utils.Operations;
+// import com.zugarez.zugarez_BACK.global.utils.Operations;
+// import io.micrometer.core.instrument.Counter;
+// import io.micrometer.core.instrument.Timer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -16,26 +18,37 @@ public class ProductService {
     @Autowired
     ProductRepository productRepository;
 
+    // @Autowired
+    // private Counter productCreatedCounter;
+
+    // @Autowired
+    // private Timer databaseQueryTimer;
+
     public List<Product> getAllProducts() {
-        System.out.println("🔍 DEBUG - Iniciando getAllProducts()");
-        
-        List<Product> products = productRepository.findAllExplicit();
-        
-        System.out.println("🔍 DEBUG - Productos encontrados: " + products.size());
-        
-        for (Product p : products) {
-            System.out.println("=== PRODUCTO DEBUG ===");
-            System.out.println("ID: " + p.getId());
-            System.out.println("Name: " + p.getName());
-            System.out.println("Price: " + p.getPrice());
-            System.out.println("Brand: " + p.getBrand());
-            System.out.println("SupplierId: " + p.getSupplierId());
-            System.out.println("Description: " + p.getDescription());
-            System.out.println("UrlImage: " + p.getUrlImage());
-            System.out.println("=====================");
+        // Timer.Sample sample = Timer.start();
+        try {
+            System.out.println("🔍 DEBUG - Iniciando getAllProducts()");
+            
+            List<Product> products = productRepository.findAllExplicit();
+            
+            System.out.println("🔍 DEBUG - Productos encontrados: " + products.size());
+            
+            for (Product p : products) {
+                System.out.println("=== PRODUCTO DEBUG ===");
+                System.out.println("ID: " + p.getId());
+                System.out.println("Name: " + p.getName());
+                System.out.println("Price: " + p.getPrice());
+                System.out.println("Brand: " + p.getBrand());
+                System.out.println("SupplierId: " + p.getSupplierId());
+                System.out.println("Description: " + p.getDescription());
+                System.out.println("UrlImage: " + p.getUrlImage());
+                System.out.println("=====================");
+            }
+            
+            return products;
+        } finally {
+            // sample.stop(databaseQueryTimer);
         }
-        
-        return products;
     }
 
     public Product getProductById(int id) throws ResourceNotFoundException {
@@ -55,7 +68,9 @@ public class ProductService {
         product.setUrlImage(dto.getUrlImage());
         System.out.println("Se intenta guardar el producto: " + dto.getName());
 
-        return productRepository.save(product);
+        Product savedProduct = productRepository.save(product);
+        // productCreatedCounter.increment();
+        return savedProduct;
     }
 
     public Product updateProduct(int id, ProductDto dto) throws ResourceNotFoundException, AttributeException {

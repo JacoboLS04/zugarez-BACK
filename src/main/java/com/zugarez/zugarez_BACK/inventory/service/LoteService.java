@@ -7,6 +7,7 @@ import com.zugarez.zugarez_BACK.global.exceptions.ResourceNotFoundException;
 import com.zugarez.zugarez_BACK.inventory.dto.LoteDto;
 import com.zugarez.zugarez_BACK.inventory.entity.Lote;
 import com.zugarez.zugarez_BACK.inventory.repository.LoteRepository;
+// import io.micrometer.core.instrument.Counter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +22,9 @@ public class LoteService {
 
     @Autowired
     private ProductRepository productRepository;
+
+    // @Autowired
+    // private Counter loteCreatedCounter;
 
     public List<Lote> getAllLotes() {
         System.out.println("🔍 DEBUG LoteService - Obteniendo todos los lotes");
@@ -77,7 +81,9 @@ public class LoteService {
         lote.setUnitPrice(dto.getUnitPrice());
 
         System.out.println("🔍 DEBUG LoteService - Guardando lote: " + lote.getId());
-        return loteRepository.save(lote);
+        Lote savedLote = loteRepository.save(lote);
+        // loteCreatedCounter.increment();
+        return savedLote;
     }
 
     public Lote updateLote(int id, LoteDto dto) throws ResourceNotFoundException, AttributeException {

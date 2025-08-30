@@ -132,7 +132,7 @@ public class AuthController {
         
         Optional<UserEntity> userOpt = Optional.empty();
         if (dto.getEmail() != null && !dto.getEmail().isEmpty()) {
-            userOpt = userEntityRepository.findByEmail(dto.getEmail());
+            userOpt = userEntityRepository.findByEmail(dto.getEmail()); 
         }
         if (userOpt.isEmpty() && dto.getUsername() != null && !dto.getUsername().isEmpty()) {
             userOpt = userEntityRepository.findByUsername(dto.getUsername());

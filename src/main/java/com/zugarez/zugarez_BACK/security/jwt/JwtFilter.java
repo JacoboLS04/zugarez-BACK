@@ -29,6 +29,15 @@ public class JwtFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain) throws ServletException, IOException {
+        // Omitir autenticación JWT para endpoints de Actuator
+        String requestPath = req.getServletPath();
+        if (requestPath.startsWith("/actuator/")) {
+            System.out.println("=== JWT FILTER ===");
+            System.out.println("Omitiendo JWT Filter para Actuator endpoint: " + req.getRequestURL());
+            chain.doFilter(req, res);
+            return;
+        }
+
         String token = getToken(req);
         System.out.println("=== JWT FILTER ===");
         System.out.println("Request URL: " + req.getRequestURL());
