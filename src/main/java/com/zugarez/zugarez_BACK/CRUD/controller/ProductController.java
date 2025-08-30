@@ -2,10 +2,13 @@ package com.zugarez.zugarez_BACK.CRUD.controller;
 
 import com.zugarez.zugarez_BACK.CRUD.dto.ProductDto;
 import com.zugarez.zugarez_BACK.CRUD.entity.Product;
+import com.zugarez.zugarez_BACK.CRUD.repository.ProductRepository;
 import com.zugarez.zugarez_BACK.CRUD.service.ProductService;
 import com.zugarez.zugarez_BACK.global.dto.MessageDto;
 import com.zugarez.zugarez_BACK.global.exceptions.AttributeException;
 import com.zugarez.zugarez_BACK.global.exceptions.ResourceNotFoundException;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,6 +24,12 @@ public class ProductController {
 
     @Autowired
     ProductService productService;
+
+    @Autowired
+    ProductRepository productRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @GetMapping
@@ -56,6 +65,38 @@ public class ProductController {
         Product product = productService.deleteProduct(id);
         String message = "Producto " + product.getName() + " eliminado correctamente";
         return ResponseEntity.ok(new MessageDto(HttpStatus.OK, message));
+    }
+
+    // Endpoint para testing - devuelve el producto completo
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/test")
+    public ResponseEntity<Product> saveAndReturn(@Valid @RequestBody ProductDto dto) throws AttributeException {
+        Product product = productService.saveProduct(dto);
+        return ResponseEntity.ok(product);
+    }
+
+    // Endpoint de debug con SQL nativo
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    @GetMapping("/debug-sql")
+    public ResponseEntity<?> debugSql() {
+        System.out.println("🔍 DEBUG - Ejecutando consulta SQL nativa...");
+        
+        String sql = "SELECT id, name, price, brand, supplier_id, description, url_image FROM products";
+        List<Object[]> results = entityManager.createNativeQuery(sql).getResultList();
+        
+        System.out.println("🔍 DEBUG SQL DIRECTO - Resultados: " + results.size());
+        for (Object[] row : results) {
+            System.out.println("ID: " + row[0]);
+            System.out.println("Name: " + row[1]);
+            System.out.println("Price: " + row[2]);
+            System.out.println("Brand: " + row[3]);
+            System.out.println("Supplier_ID: " + row[4]);
+            System.out.println("Description: " + row[5]);
+            System.out.println("URL_Image: " + row[6]);
+            System.out.println("------------------------");
+        }
+        
+        return ResponseEntity.ok(results);
     }
 
 }

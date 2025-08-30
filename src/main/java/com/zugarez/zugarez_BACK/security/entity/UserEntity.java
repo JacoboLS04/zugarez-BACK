@@ -13,7 +13,7 @@ public class UserEntity {
 
     @Column(name = "verification_token")
     private String verificationToken;
-    
+
     @Column(name = "login_code")
     private String loginCode;
     

@@ -8,28 +8,37 @@ import jakarta.persistence.*;
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private int id;
 
+    @Column(name = "name", nullable = false)
     private String name;
+    
+    @Column(name = "price", nullable = false)
     private double price;
+    
+    @Column(name = "brand")
+    private String brand;
+
+    @Column(name = "supplier_id")
+    private int supplierId;
+
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
+    @Column(name = "url_image")
     private String urlImage;
-
-
-    public Product(int id, String name, double price , String urlImage) {
-        this.id = id;
-        this.name = name;
-        this.price = price;
-        this.urlImage = urlImage;
-    }
 
     public Product() {
     }
 
-    public String getUrlImage() {
-        return urlImage;
-    }
-
-    public void setUrlImage(String urlImage) {
+    public Product(int id, String name, double price, String brand, int supplierId, String description, String urlImage) {
+        this.id = id;
+        this.name = name;
+        this.price = price;
+        this.brand = brand;
+        this.supplierId = supplierId;
+        this.description = description;
         this.urlImage = urlImage;
     }
 
@@ -55,5 +64,37 @@ public class Product {
 
     public void setPrice(double price) {
         this.price = price;
+    }
+
+    public String getBrand() {
+        return brand;
+    }
+
+    public void setBrand(String brand) {
+        this.brand = brand;
+    }
+
+    public int getSupplierId() {
+        return supplierId;
+    }
+
+    public void setSupplierId(int supplierId) {
+        this.supplierId = supplierId;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getUrlImage() {
+        return urlImage;
+    }
+
+    public void setUrlImage(String urlImage) {
+        this.urlImage = urlImage;
     }
 }

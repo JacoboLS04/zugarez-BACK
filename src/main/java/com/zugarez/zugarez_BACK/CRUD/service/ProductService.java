@@ -17,7 +17,25 @@ public class ProductService {
     ProductRepository productRepository;
 
     public List<Product> getAllProducts() {
-        return productRepository.findAll();
+        System.out.println("🔍 DEBUG - Iniciando getAllProducts()");
+        
+        List<Product> products = productRepository.findAllExplicit();
+        
+        System.out.println("🔍 DEBUG - Productos encontrados: " + products.size());
+        
+        for (Product p : products) {
+            System.out.println("=== PRODUCTO DEBUG ===");
+            System.out.println("ID: " + p.getId());
+            System.out.println("Name: " + p.getName());
+            System.out.println("Price: " + p.getPrice());
+            System.out.println("Brand: " + p.getBrand());
+            System.out.println("SupplierId: " + p.getSupplierId());
+            System.out.println("Description: " + p.getDescription());
+            System.out.println("UrlImage: " + p.getUrlImage());
+            System.out.println("=====================");
+        }
+        
+        return products;
     }
 
     public Product getProductById(int id) throws ResourceNotFoundException {
@@ -31,8 +49,11 @@ public class ProductService {
         Product product = new Product();
         product.setName(dto.getName());
         product.setPrice(dto.getPrice());
+        product.setBrand(dto.getBrand());
+        product.setSupplierId(dto.getSupplierId());
+        product.setDescription(dto.getDescription());
         product.setUrlImage(dto.getUrlImage());
-        System.out.println("Se intenta guardar el producto: " + dto.getUrlImage());
+        System.out.println("Se intenta guardar el producto: " + dto.getName());
 
         return productRepository.save(product);
     }
@@ -44,6 +65,10 @@ public class ProductService {
         }
         product.setName(dto.getName());
         product.setPrice(dto.getPrice());
+        product.setBrand(dto.getBrand());
+        product.setSupplierId(dto.getSupplierId());
+        product.setDescription(dto.getDescription());
+        product.setUrlImage(dto.getUrlImage());
         return productRepository.save(product);
     }
 
