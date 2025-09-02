@@ -47,7 +47,7 @@ public class EmailService {
             
             helper.setTo(to);
             helper.setSubject("🔐 Verifica tu cuenta en Zugarez");
-            
+            //TODO: Esta mierdota va al front o va al back? Supongo que back pero se ve feito
             String verificationUrl = "https://better-billi-zugarez-sys-ed7b78de.koyeb.app/auth/verify?token=" + token;
             
             String htmlContent = """
