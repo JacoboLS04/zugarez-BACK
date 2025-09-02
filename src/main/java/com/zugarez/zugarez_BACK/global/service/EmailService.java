@@ -48,7 +48,7 @@ public class EmailService {
             helper.setTo(to);
             helper.setSubject("🔐 Verifica tu cuenta en Zugarez");
             
-            String verificationUrl = "zugarez.vercel.app/auth/verify?token=" + token;
+            String verificationUrl = "https://better-billi-zugarez-sys-ed7b78de.koyeb.app/auth/verify?token=" + token;
             
             String htmlContent = """
                 <!DOCTYPE html>
