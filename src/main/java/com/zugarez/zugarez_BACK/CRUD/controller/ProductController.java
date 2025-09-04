@@ -40,7 +40,6 @@ public class ProductController {
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<Product> getOne(@PathVariable("id") int id) throws ResourceNotFoundException {
-        return ResponseEntity.ok(productService.getProductById(id));
         System.out.println("🔍 DEBUG - Obteniendo producto con ID: " + id);
         return ResponseEntity.ok(productService.getProductById(id));
     }
