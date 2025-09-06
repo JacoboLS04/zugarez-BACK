@@ -25,7 +25,6 @@ public class MonitoringController {
     
     @GetMapping("/metrics")
     public ResponseEntity<String> metrics() {
-        // Métricas básicas de la aplicación
         StringBuilder metrics = new StringBuilder();
         metrics.append("# HELP app_info Application information\n");
         metrics.append("# TYPE app_info gauge\n");
@@ -37,3 +36,4 @@ public class MonitoringController {
         return ResponseEntity.ok(metrics.toString());
     }
 }
+
