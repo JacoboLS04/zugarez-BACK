@@ -9,16 +9,12 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain monitoringSecurityFilterChain(HttpSecurity http) throws Exception {
         http
+            .securityMatcher("/monitoring/**", "/actuator/**") // Aplica esta configuración solo a estas rutas
             .authorizeHttpRequests()
-                // Permitir acceso público a estos endpoints
-                .requestMatchers("/monitoring/health", "/actuator/**").permitAll()
-                // Mantener los puntos de acceso existentes
-                .requestMatchers("/api/public/**").permitAll()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN")
-                .anyRequest().authenticated() // Proteger el resto de los endpoints
+                .requestMatchers("/monitoring/health").permitAll() // Permitir acceso público
+                .anyRequest().authenticated() // Proteger el resto de las rutas en /monitoring/**
             .and()
             .csrf().disable(); // Deshabilitar CSRF para simplificar pruebas
 

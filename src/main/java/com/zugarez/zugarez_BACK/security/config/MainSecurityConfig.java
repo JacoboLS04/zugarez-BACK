@@ -59,4 +59,18 @@ public class MainSecurityConfig {
         return http.build();
     }
 
+    @Bean
+    public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher("/api/**") // Aplica esta configuración solo a las rutas /api/**
+            .authorizeHttpRequests()
+                .requestMatchers("/api/public/**").permitAll() // Acceso público
+                .requestMatchers("/api/admin/**").hasRole("ADMIN") // Solo para ADMIN
+                .requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN") // Para USER y ADMIN
+                .anyRequest().authenticated() // Proteger el resto de las rutas en /api/**
+            .and()
+            .csrf().disable(); // Deshabilitar CSRF para simplificar pruebas
+
+        return http.build();
+    }
 }
