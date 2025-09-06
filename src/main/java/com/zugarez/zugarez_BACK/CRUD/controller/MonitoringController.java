@@ -6,10 +6,14 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.http.ResponseEntity;
 import java.util.HashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/monitoring")
 public class MonitoringController {
+
+    private static final Logger logger = LoggerFactory.getLogger(MonitoringController.class);
 
     @GetMapping("/health")
     public ResponseEntity<Map<String, Object>> health() {
@@ -19,6 +23,9 @@ public class MonitoringController {
         health.put("environment", System.getenv("NODE_ENV"));
         health.put("platform", System.getenv("PLATFORM"));
         health.put("lokiConfigured", System.getenv("LOKI_URL") != null);
+        
+        // Log para testing
+        logger.info("Health check accessed from platform: {}", System.getenv("PLATFORM"));
         
         return ResponseEntity.ok(health);
     }
@@ -34,6 +41,16 @@ public class MonitoringController {
         metrics.append("app_uptime_seconds ").append(System.currentTimeMillis() / 1000).append("\n");
         
         return ResponseEntity.ok(metrics.toString());
+    }
+    
+    @GetMapping("/test-logs")
+    public ResponseEntity<String> testLogs() {
+        logger.info("🚀 Test log - INFO level");
+        logger.warn("⚠️ Test log - WARN level");
+        logger.error("❌ Test log - ERROR level");
+        logger.debug("🔍 Test log - DEBUG level");
+        
+        return ResponseEntity.ok("Test logs generated successfully");
     }
 }
 
