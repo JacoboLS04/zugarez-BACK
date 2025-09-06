@@ -39,3 +39,8 @@ grafana-data/
 loki-data/
 *.log
 logs/
+
+.env
+.env.local
+.env.production
+.env.staging

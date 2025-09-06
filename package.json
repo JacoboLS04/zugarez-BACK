@@ -1,0 +1,15 @@
+{
+  "name": "zugarez-back",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node app.js",
+    "start:prod": "node app.js | tee /var/log/app/application.log"
+  },
+  "dependencies": {
+    "winston": "^3.11.0",
+    "winston-loki": "^6.0.8",
+    "prom-client": "^15.1.0",
+    "express-prom-bundle": "^7.0.0",
+    "pidusage": "^3.0.2"
+  }
+}
