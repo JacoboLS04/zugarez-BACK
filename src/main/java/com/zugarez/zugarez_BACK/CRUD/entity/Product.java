@@ -31,10 +31,13 @@ public class Product {
     @Column(name = "url_image")
     private String urlImage;
 
+    @Column(name = "stock_minimo")
+    private String stockMinimo;
+
     public Product() {
     }
 
-    public Product(int id, String name, double price, String brand, int supplierId, String description, String urlImage) {
+    public Product(int id, String name, double price, String brand, int supplierId, String description, String urlImage, String stockMinimo) {
         this.id = id;
         this.name = name;
         this.price = price;
@@ -42,6 +45,7 @@ public class Product {
         this.supplierId = supplierId;
         this.description = description;
         this.urlImage = urlImage;
+        this.stockMinimo = stockMinimo;
     }
 
     public int getId() {
@@ -99,4 +103,8 @@ public class Product {
     public void setUrlImage(String urlImage) {
         this.urlImage = urlImage;
     }
+
+    public String getStockMinimo() {return stockMinimo;}
+
+    public void setStockMinimo(String stockMinimo) {this.stockMinimo = stockMinimo;}
 }

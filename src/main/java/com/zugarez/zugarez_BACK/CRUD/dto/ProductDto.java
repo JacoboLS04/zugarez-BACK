@@ -23,16 +23,20 @@ public class ProductDto {
     @NotBlank(message = "Debe ir una url de la imagen")
     private String urlImage;
 
+    @NotBlank(message = "El stock mínimo no puede estar vacío")
+    private String stockMinimo;
+
     public ProductDto() {
     }
 
-    public ProductDto(String name, double price, String brand, Integer supplierId, String description, String urlImage) {
+    public ProductDto(String name, double price, String brand, Integer supplierId, String description, String urlImage, String stockMinimo) {
         this.name = name;
         this.price = price;
         this.brand = brand;
         this.supplierId = supplierId;
         this.description = description;
         this.urlImage = urlImage;
+        this.stockMinimo = stockMinimo;
     }
 
     public String getName() {
@@ -100,6 +104,10 @@ public class ProductDto {
     public void setUrlImage(String urlImage) {
         this.urlImage = urlImage;
     }
+
+    public String getStockMinimo() {return stockMinimo;}
+
+    public void setStockMinimo(String stockMinimo) {this.stockMinimo = stockMinimo;}
 }
 
 
