@@ -42,6 +42,7 @@ public class ProductService {
                 System.out.println("SupplierId: " + p.getSupplierId());
                 System.out.println("Description: " + p.getDescription());
                 System.out.println("UrlImage: " + p.getUrlImage());
+                System.out.println("Stock:minimo: " + p.getStockMinimo());
                 System.out.println("=====================");
             }
             
