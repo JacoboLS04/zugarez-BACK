@@ -12,8 +12,13 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests()
-                .requestMatchers("/monitoring/health").permitAll() // Permitir acceso público
-                .anyRequest().authenticated()
+                // Permitir acceso público a estos endpoints
+                .requestMatchers("/monitoring/health", "/actuator/**").permitAll()
+                // Mantener los puntos de acceso existentes
+                .requestMatchers("/api/public/**").permitAll()
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN")
+                .anyRequest().authenticated() // Proteger el resto de los endpoints
             .and()
             .csrf().disable(); // Deshabilitar CSRF para simplificar pruebas
 
