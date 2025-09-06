@@ -39,3 +39,4 @@ grafana-data/
 loki-data/
 *.log
 logs/
+".env" 
