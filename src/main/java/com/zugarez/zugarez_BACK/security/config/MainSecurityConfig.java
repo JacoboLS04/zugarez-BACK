@@ -62,7 +62,7 @@ public class MainSecurityConfig {
     @Bean
     public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-            .securityMatcher("/api/**") // Aplica esta configuración solo a las rutas /api/**
+            .securityMatcher("/api/**") // Maneja solo las rutas /api/**
             .authorizeHttpRequests()
                 .requestMatchers("/api/public/**").permitAll() // Acceso público
                 .requestMatchers("/api/admin/**").hasRole("ADMIN") // Solo para ADMIN

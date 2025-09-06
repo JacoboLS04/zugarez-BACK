@@ -11,7 +11,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain monitoringSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-            .securityMatcher("/monitoring/**", "/actuator/**") // Aplica esta configuración solo a estas rutas
+            .securityMatcher("/monitoring/**", "/actuator/**") // Maneja solo estas rutas
             .authorizeHttpRequests()
                 .requestMatchers("/monitoring/health").permitAll() // Permitir acceso público
                 .anyRequest().authenticated() // Proteger el resto de las rutas en /monitoring/**
