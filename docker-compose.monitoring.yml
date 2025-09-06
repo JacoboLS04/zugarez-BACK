@@ -51,17 +51,23 @@ services:
 
   # Promtail - Log collector
   promtail:
-    image: grafana/promtail:latest
-    container_name: zugarez-promtail
+    image: grafana/promtail:2.9.0
+    container_name: promtail
     volumes:
-      - ./monitoring/promtail/promtail-config.yml:/etc/promtail/config.yml
+      - ./monitoring/promtail-config.yml:/etc/promtail/config.yml
       - /var/log:/var/log:ro
-      - ./logs:/app/logs:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     command: -config.file=/etc/promtail/config.yml
+    environment:
+      - LOKI_URL=${LOKI_URL}
+      - LOKI_USERNAME=${LOKI_USERNAME}
+      - LOKI_PASSWORD=${LOKI_PASSWORD}
+      - NODE_ENV=${NODE_ENV:-production}
+    ports:
+      - "9080:9080"
+    restart: unless-stopped
     networks:
       - monitoring
-    depends_on:
-      - loki
 
 networks:
   monitoring:
