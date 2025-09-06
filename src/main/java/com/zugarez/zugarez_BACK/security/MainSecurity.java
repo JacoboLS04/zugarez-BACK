@@ -18,6 +18,8 @@ public class MainSecurity {
                 .requestMatchers("/auth/**").permitAll()
                 .requestMatchers("/metrics").permitAll()
                 .requestMatchers("/monitoring/**").permitAll()
+                .requestMatchers("/favicon.ico").permitAll()
+                .requestMatchers("/actuator/**").permitAll()
                 .anyRequest().authenticated()
             );
         return http.build();
