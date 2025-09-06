@@ -18,12 +18,3 @@ public class PrometheusConfig {
         );
     }
 }
-    }
-    
-    @Bean
-    public PrometheusMeterRegistry prometheusMeterRegistry() {
-        return new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
-    }
-}
-    }
-}
