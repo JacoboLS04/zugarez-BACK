@@ -34,6 +34,7 @@ public class CorsConfig {
                 .securityMatcher("/actuator/**", "/api/v1/query**", "/api/v1/status/**")
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.disable())
                 .build();
     }
 }
