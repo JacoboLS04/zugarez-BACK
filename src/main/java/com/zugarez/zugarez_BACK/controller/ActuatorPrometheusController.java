@@ -19,6 +19,7 @@ public class ActuatorPrometheusController {
         data.put("result", new Object[]{});
         response.put("data", data);
         return ResponseEntity.ok(response);
+        
     }
 
     @PostMapping("/query")
