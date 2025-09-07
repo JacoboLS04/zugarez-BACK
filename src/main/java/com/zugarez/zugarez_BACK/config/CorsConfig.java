@@ -31,13 +31,11 @@ public class CorsConfig {
     @Bean
     @Order(0)
     public SecurityFilterChain prometheusSecurityFilterChain(HttpSecurity http) throws Exception {
-        http.securityMatcher("/actuator/prometheus", "/actuator/health")
-            .authorizeHttpRequests(authz -> authz.anyRequest().permitAll())
+        return http
+            .securityMatcher("/actuator/**")
+            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
             .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .httpBasic(httpBasic -> httpBasic.disable())
-            .formLogin(form -> form.disable());
-        return http.build();
+            .build();
     }
 }
 
