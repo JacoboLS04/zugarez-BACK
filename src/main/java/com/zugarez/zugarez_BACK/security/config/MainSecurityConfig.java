@@ -44,14 +44,15 @@ public class MainSecurityConfig {
         http.authenticationManager(authenticationManager);
 
         http
-            .securityMatcher("/api/**") 
+            .securityMatcher("/api/**", "/actuator/prometheus") // Incluye /actuator/prometheus
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/public/**").permitAll() // Acceso público
                 .requestMatchers("/api/admin/**").hasRole("ADMIN") // Solo para ADMIN
                 .requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN") // Para USER y ADMIN
-                .anyRequest().authenticated() // Proteger el resto de las rutas en /api/**
+                .requestMatchers("/actuator/prometheus").permitAll() // Permitir acceso público
+                .anyRequest().authenticated() // Proteger el resto de las rutas
             )
             .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtEntryPoint))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
