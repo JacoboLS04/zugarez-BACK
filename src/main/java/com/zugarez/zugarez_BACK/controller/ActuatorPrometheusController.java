@@ -129,4 +129,39 @@ public class ActuatorPrometheusController {
         response.put("data", data);
         return ResponseEntity.ok().headers(headers).body(response);
     }
+
+    @GetMapping("/label/{label}/values")
+    public ResponseEntity<Map<String, Object>> labelValues(@PathVariable String label) {
+        System.out.println("=== PROMETHEUS LABEL VALUES ENDPOINT CALLED ===");
+        System.out.println("Label: " + label);
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Access-Control-Allow-Origin", "*");
+        headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        headers.add("Access-Control-Allow-Headers", "*");
+        headers.add("Access-Control-Allow-Credentials", "false");
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "success");
+        response.put("data", new String[]{"heap", "nonheap"});
+        
+        return ResponseEntity.ok().headers(headers).body(response);
+    }
+
+    @GetMapping("/labels")
+    public ResponseEntity<Map<String, Object>> labels() {
+        System.out.println("=== PROMETHEUS LABELS ENDPOINT CALLED ===");
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Access-Control-Allow-Origin", "*");
+        headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        headers.add("Access-Control-Allow-Headers", "*");
+        headers.add("Access-Control-Allow-Credentials", "false");
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "success");
+        response.put("data", new String[]{"__name__", "application", "instance", "area", "id"});
+        
+        return ResponseEntity.ok().headers(headers).body(response);
+    }
 }
