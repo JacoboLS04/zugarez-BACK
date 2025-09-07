@@ -10,7 +10,7 @@ public class PrometheusConfig {
 
     @Bean
     public MeterRegistryCustomizer<MeterRegistry> metricsCommonTags() {
-        return (MeterRegistry registry) -> registry.config().commonTags(
+        return registry -> registry.config().commonTags(
             "application", "zugarez-backend",
             "environment", "production",
             "platform", "koyeb"
