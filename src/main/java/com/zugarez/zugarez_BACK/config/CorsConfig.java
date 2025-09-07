@@ -2,10 +2,14 @@ package com.zugarez.zugarez_BACK.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration("webCorsConfig")
+@EnableWebSecurity
 public class CorsConfig {
 
     @Bean
@@ -20,5 +24,13 @@ public class CorsConfig {
                         .allowCredentials(true);
             }
         };
+    }
+
+    @Bean
+    public SecurityFilterChain prometheusSecurityFilterChain(HttpSecurity http) throws Exception {
+        http.securityMatcher("/actuator/prometheus", "/actuator/health", "/actuator/info")
+            .authorizeHttpRequests(authz -> authz.anyRequest().permitAll())
+            .csrf(csrf -> csrf.disable());
+        return http.build();
     }
 }
