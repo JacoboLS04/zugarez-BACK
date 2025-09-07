@@ -11,10 +11,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain monitoringSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-            .securityMatcher("/monitoring/**", "/actuator/**") // Maneja solo estas rutas
+            .securityMatcher("/actuator/**", "/monitoring/**") // Maneja solo estas rutas
             .authorizeHttpRequests()
-                .requestMatchers("/monitoring/health").permitAll() // Permitir acceso público
-                .anyRequest().authenticated() // Proteger el resto de las rutas en /monitoring/**
+                .requestMatchers("/actuator/prometheus", "/monitoring/health").permitAll() // Permitir acceso público
+                .anyRequest().authenticated() // Proteger el resto de las rutas
             .and()
             .csrf().disable(); // Deshabilitar CSRF para simplificar pruebas
 
