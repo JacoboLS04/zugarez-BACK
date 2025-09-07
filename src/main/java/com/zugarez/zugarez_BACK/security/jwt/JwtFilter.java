@@ -29,11 +29,11 @@ public class JwtFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain) throws ServletException, IOException {
-        // Omitir autenticación JWT para endpoints de Actuator
+        // Omitir autenticación JWT para endpoints de Actuator y API de Prometheus
         String requestPath = req.getServletPath();
-        if (requestPath.startsWith("/actuator/")) {
+        if (shouldNotFilter(req)) {
             System.out.println("=== JWT FILTER ===");
-            System.out.println("Omitiendo JWT Filter para Actuator endpoint: " + req.getRequestURL());
+            System.out.println("Omitiendo JWT Filter para endpoint permitido: " + req.getRequestURL());
             chain.doFilter(req, res);
             return;
         }
@@ -66,6 +66,13 @@ public class JwtFilter extends OncePerRequestFilter {
             System.out.println("Error en JWT Filter: " + e.getMessage());
         }
         chain.doFilter(req, res);
+    }
+
+    private boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return path.startsWith("/actuator/") || 
+               path.startsWith("/api/v1/query") || 
+               path.startsWith("/api/v1/status/");
     }
 
     private String getToken(HttpServletRequest request) {

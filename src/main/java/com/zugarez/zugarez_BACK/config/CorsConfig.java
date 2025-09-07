@@ -20,10 +20,11 @@ public class CorsConfig {
     @Order(0)
     public SecurityFilterChain prometheusSecurityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .securityMatcher("/actuator/**", "/api/v1/query**", "/api/v1/status/**")
+                .securityMatcher("/actuator/**", "/api/v1/query", "/api/v1/query_range", "/api/v1/status/**")
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .sessionManagement(session -> session.sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.STATELESS))
                 .build();
     }
     
