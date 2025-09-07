@@ -1,25 +1,48 @@
 package com.zugarez.zugarez_BACK.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.metrics.MetricsEndpoint;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/v1")
 @CrossOrigin(origins = "*", allowCredentials = "false")
 public class ActuatorPrometheusController {
 
+    @Autowired
+    private MetricsEndpoint metricsEndpoint;
+
     @GetMapping("/query")
     public ResponseEntity<Map<String, Object>> query(@RequestParam String query) {
         System.out.println("=== PROMETHEUS QUERY ENDPOINT CALLED ===");
         System.out.println("Query: " + query);
+        
         Map<String, Object> response = new HashMap<>();
         response.put("status", "success");
         Map<String, Object> data = new HashMap<>();
         data.put("resultType", "vector");
-        data.put("result", new Object[]{});
+        
+        List<Map<String, Object>> results = new ArrayList<>();
+        
+        // Simular respuesta basada en la query
+        if (query.contains("jvm_memory_used_bytes")) {
+            Map<String, Object> result = new HashMap<>();
+            Map<String, String> metric = new HashMap<>();
+            metric.put("__name__", "jvm_memory_used_bytes");
+            metric.put("area", "heap");
+            result.put("metric", metric);
+            result.put("value", new Object[]{System.currentTimeMillis() / 1000, "50000000"});
+            results.add(result);
+        }
+        
+        data.put("result", results);
         response.put("data", data);
         return ResponseEntity.ok(response);
         
