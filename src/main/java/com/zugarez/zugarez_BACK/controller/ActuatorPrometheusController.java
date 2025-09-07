@@ -8,6 +8,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1")
+@CrossOrigin(origins = "*", allowCredentials = "false")
 public class ActuatorPrometheusController {
 
     @GetMapping("/query")
