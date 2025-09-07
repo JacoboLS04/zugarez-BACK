@@ -72,7 +72,7 @@ public class JwtFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
         return path.startsWith("/actuator/") || 
-               path.startsWith("/api/v1/");
+               path.startsWith("/prometheus/api/v1/");
     }
 
     private String getToken(HttpServletRequest request) {

@@ -20,7 +20,7 @@ public class CorsConfig {
     @Order(0)
     public SecurityFilterChain prometheusSecurityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .securityMatcher("/actuator/**", "/api/v1/**")
+                .securityMatcher("/actuator/**", "/prometheus/api/v1/**")
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
