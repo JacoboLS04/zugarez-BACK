@@ -8,9 +8,12 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1")
+@CrossOrigin(origins = "*", allowCredentials = "false", maxAge = 3600, 
+    allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.OPTIONS})
 public class ActuatorPrometheusController {
 
     @GetMapping("/query")
+    @CrossOrigin(origins = "*", allowCredentials = "false")
     public ResponseEntity<Map<String, Object>> query(@RequestParam String query) {
         System.out.println("=== PROMETHEUS QUERY ENDPOINT CALLED ===");
         System.out.println("Query: " + query);
@@ -41,12 +44,14 @@ public class ActuatorPrometheusController {
     }
 
     @PostMapping("/query")
+    @CrossOrigin(origins = "*", allowCredentials = "false")
     public ResponseEntity<Map<String, Object>> queryPost(@RequestParam String query) {
         System.out.println("=== PROMETHEUS QUERY POST ENDPOINT CALLED ===");
         return query(query);
     }
 
     @GetMapping("/status/buildinfo")
+    @CrossOrigin(origins = "*", allowCredentials = "false")
     public ResponseEntity<Map<String, Object>> buildinfo() {
         System.out.println("=== PROMETHEUS BUILDINFO ENDPOINT CALLED ===");
         Map<String, Object> response = new HashMap<>();
