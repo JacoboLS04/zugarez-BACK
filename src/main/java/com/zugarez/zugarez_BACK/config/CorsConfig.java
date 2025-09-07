@@ -20,7 +20,7 @@ public class CorsConfig {
     @Order(0)
     public SecurityFilterChain prometheusSecurityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .securityMatcher("/actuator/**", "/prometheus/api/v1/**")
+                .securityMatcher("/actuator/**", "/api/v1/**")
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -30,7 +30,7 @@ public class CorsConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("https://grafana.com", "http://localhost:3000", "https://better-billi-zugarez-sys-ed7b78de.koyeb.app"));
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(false);

@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/prometheus/api/v1")
+@RequestMapping("/api/v1")
 public class ActuatorPrometheusController {
 
     @GetMapping("/test")
