@@ -68,7 +68,8 @@ public class JwtFilter extends OncePerRequestFilter {
         chain.doFilter(req, res);
     }
 
-    private boolean shouldNotFilter(HttpServletRequest request) {
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
         return path.startsWith("/actuator/") || 
                path.startsWith("/api/v1/query") || 
