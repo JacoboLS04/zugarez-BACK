@@ -82,4 +82,51 @@ public class ActuatorPrometheusController {
         response.put("data", data);
         return ResponseEntity.ok().headers(headers).body(response);
     }
+
+    @GetMapping("/query_range")
+    public ResponseEntity<Map<String, Object>> queryRange(
+        @RequestParam String query,
+        @RequestParam String start,
+        @RequestParam String end,
+        @RequestParam String step) {
+        
+        System.out.println("=== PROMETHEUS QUERY_RANGE ENDPOINT CALLED ===");
+        System.out.println("Query: " + query);
+        System.out.println("Start: " + start + ", End: " + end + ", Step: " + step);
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Access-Control-Allow-Origin", "*");
+        headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        headers.add("Access-Control-Allow-Headers", "*");
+        headers.add("Access-Control-Allow-Credentials", "false");
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "success");
+        Map<String, Object> data = new HashMap<>();
+        data.put("resultType", "matrix");
+        
+        Object[] results;
+        if (query.contains("jvm_memory_used_bytes")) {
+            Map<String, Object> result = new HashMap<>();
+            Map<String, String> metric = new HashMap<>();
+            metric.put("__name__", "jvm_memory_used_bytes");
+            metric.put("area", "heap");
+            result.put("metric", metric);
+            
+            // Simular datos de tiempo con valores
+            Object[][] values = {
+                {System.currentTimeMillis() / 1000.0 - 60, "44000000"},
+                {System.currentTimeMillis() / 1000.0 - 30, "45000000"},
+                {System.currentTimeMillis() / 1000.0, "46000000"}
+            };
+            result.put("values", values);
+            results = new Object[]{result};
+        } else {
+            results = new Object[]{};
+        }
+        
+        data.put("result", results);
+        response.put("data", data);
+        return ResponseEntity.ok().headers(headers).body(response);
+    }
 }
