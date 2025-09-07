@@ -8,7 +8,7 @@ import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCusto
 @Configuration
 public class PrometheusConfig {
 
-    @Bean
+    @Bean(name = "customPrometheusConfig") // Cambiar el nombre del bean para evitar conflictos
     MeterRegistryCustomizer<MeterRegistry> metricsCommonTags() {
         return registry -> registry.config().commonTags(
             "application", "zugarez-backend",
