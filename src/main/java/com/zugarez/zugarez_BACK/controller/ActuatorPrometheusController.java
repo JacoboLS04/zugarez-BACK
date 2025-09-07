@@ -105,29 +105,44 @@ public class ActuatorPrometheusController {
         Map<String, Object> data = new HashMap<>();
         data.put("resultType", "matrix");
         
-        Object[] results;
-        if (query.contains("jvm_memory_used_bytes")) {
-            Map<String, Object> result = new HashMap<>();
-            Map<String, String> metric = new HashMap<>();
-            metric.put("__name__", "jvm_memory_used_bytes");
-            metric.put("area", "heap");
-            result.put("metric", metric);
-            
-            // Simular datos de tiempo con valores
-            Object[][] values = {
-                {System.currentTimeMillis() / 1000.0 - 60, "44000000"},
-                {System.currentTimeMillis() / 1000.0 - 30, "45000000"},
-                {System.currentTimeMillis() / 1000.0, "46000000"}
-            };
-            result.put("values", values);
-            results = new Object[]{result};
-        } else {
-            results = new Object[]{};
-        }
+        Object[] results = generateMetricData(query);
         
         data.put("result", results);
         response.put("data", data);
         return ResponseEntity.ok().headers(headers).body(response);
+    }
+
+    private Object[] generateMetricData(String query) {
+        Map<String, Object> result = new HashMap<>();
+        Map<String, String> metric = new HashMap<>();
+        
+        if (query.contains("jvm_memory_used_bytes")) {
+            metric.put("__name__", "jvm_memory_used_bytes");
+            metric.put("area", "heap");
+        } else if (query.contains("system_cpu_usage")) {
+            metric.put("__name__", "system_cpu_usage");
+        } else if (query.contains("process_cpu_usage")) {
+            metric.put("__name__", "process_cpu_usage");
+        } else if (query.contains("jvm_threads_live")) {
+            metric.put("__name__", "jvm_threads_live_threads");
+        } else {
+            metric.put("__name__", "unknown_metric");
+        }
+        
+        metric.put("application", "zugarez-backend");
+        metric.put("instance", "");
+        result.put("metric", metric);
+        
+        // Generar datos de tiempo simulados
+        long currentTime = System.currentTimeMillis() / 1000;
+        Object[][] values = {
+            {currentTime - 120, Math.random() * 100 + ""},
+            {currentTime - 60, Math.random() * 100 + ""},
+            {currentTime, Math.random() * 100 + ""}
+        };
+        result.put("values", values);
+        
+        return new Object[]{result};
     }
 
     @GetMapping("/label/{label}/values")
