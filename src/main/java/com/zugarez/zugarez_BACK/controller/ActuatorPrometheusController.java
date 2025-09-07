@@ -1,6 +1,5 @@
 package com.zugarez.zugarez_BACK.controller;
 
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -9,6 +8,8 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1")
+@CrossOrigin(origins = "*", allowCredentials = "false", maxAge = 3600, 
+    allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.OPTIONS})
 public class ActuatorPrometheusController {
 
     @GetMapping("/test")
@@ -41,15 +42,10 @@ public class ActuatorPrometheusController {
     }
 
     @GetMapping("/query")
+    @CrossOrigin(origins = "*", allowCredentials = "false")
     public ResponseEntity<Map<String, Object>> query(@RequestParam String query) {
         System.out.println("=== PROMETHEUS QUERY ENDPOINT CALLED ===");
         System.out.println("Query: " + query);
-        
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Access-Control-Allow-Origin", "*");
-        headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-        headers.add("Access-Control-Allow-Headers", "*");
-        headers.add("Access-Control-Allow-Credentials", "false");
         
         Map<String, Object> response = new HashMap<>();
         response.put("status", "success");
@@ -72,33 +68,21 @@ public class ActuatorPrometheusController {
         
         data.put("result", results);
         response.put("data", data);
-        return ResponseEntity.ok().headers(headers).body(response);
+        return ResponseEntity.ok(response);
         
     }
 
     @PostMapping("/query")
+    @CrossOrigin(origins = "*", allowCredentials = "false")
     public ResponseEntity<Map<String, Object>> queryPost(@RequestParam String query) {
         System.out.println("=== PROMETHEUS QUERY POST ENDPOINT CALLED ===");
-        
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Access-Control-Allow-Origin", "*");
-        headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-        headers.add("Access-Control-Allow-Headers", "*");
-        headers.add("Access-Control-Allow-Credentials", "false");
-        
-        return ResponseEntity.ok().headers(headers).body(query(query).getBody());
+        return query(query);
     }
 
     @GetMapping("/status/buildinfo")
+    @CrossOrigin(origins = "*", allowCredentials = "false")
     public ResponseEntity<Map<String, Object>> buildinfo() {
         System.out.println("=== PROMETHEUS BUILDINFO ENDPOINT CALLED ===");
-        
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Access-Control-Allow-Origin", "*");
-        headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-        headers.add("Access-Control-Allow-Headers", "*");
-        headers.add("Access-Control-Allow-Credentials", "false");
-        
         Map<String, Object> response = new HashMap<>();
         response.put("status", "success");
         Map<String, Object> data = new HashMap<>();
@@ -109,7 +93,7 @@ public class ActuatorPrometheusController {
         data.put("buildDate", "2024-01-01T00:00:00Z");
         data.put("goVersion", "go1.21");
         response.put("data", data);
-        return ResponseEntity.ok().headers(headers).body(response);
+        return ResponseEntity.ok(response);
     }
 
     private Object[] generateMetricData(String query) {
