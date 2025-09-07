@@ -73,7 +73,11 @@ public class JwtFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
         return path.startsWith("/actuator/") || 
                path.startsWith("/api/v1/query") || 
-               path.startsWith("/api/v1/status/");
+               path.startsWith("/api/v1/query_range") ||
+               path.startsWith("/api/v1/status/") ||
+               path.startsWith("/api/v1/label") ||
+               path.startsWith("/api/v1/series") ||
+               path.startsWith("/api/v1/metadata");
     }
 
     private String getToken(HttpServletRequest request) {
