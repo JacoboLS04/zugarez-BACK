@@ -12,6 +12,8 @@ public class ActuatorPrometheusController {
 
     @GetMapping("/query")
     public ResponseEntity<Map<String, Object>> query(@RequestParam String query) {
+        System.out.println("=== PROMETHEUS QUERY ENDPOINT CALLED ===");
+        System.out.println("Query: " + query);
         Map<String, Object> response = new HashMap<>();
         response.put("status", "success");
         Map<String, Object> data = new HashMap<>();
@@ -24,11 +26,13 @@ public class ActuatorPrometheusController {
 
     @PostMapping("/query")
     public ResponseEntity<Map<String, Object>> queryPost(@RequestParam String query) {
+        System.out.println("=== PROMETHEUS QUERY POST ENDPOINT CALLED ===");
         return query(query);
     }
 
     @GetMapping("/status/buildinfo")
     public ResponseEntity<Map<String, Object>> buildinfo() {
+        System.out.println("=== PROMETHEUS BUILDINFO ENDPOINT CALLED ===");
         Map<String, Object> response = new HashMap<>();
         response.put("status", "success");
         Map<String, Object> data = new HashMap<>();
