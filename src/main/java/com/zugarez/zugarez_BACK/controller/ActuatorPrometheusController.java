@@ -11,6 +11,35 @@ import java.util.Map;
 @RequestMapping("/api/v1")
 public class ActuatorPrometheusController {
 
+    @GetMapping("/test")
+    public ResponseEntity<String> test() {
+        System.out.println("=== TEST ENDPOINT CALLED ===");
+        return ResponseEntity.ok("Controller funcionando!");
+    }
+
+    @GetMapping("/query_range")
+    public ResponseEntity<Map<String, Object>> queryRange(
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) String start,
+            @RequestParam(required = false) String end,
+            @RequestParam(required = false) String step) {
+        
+        System.out.println("=== PROMETHEUS QUERY_RANGE ENDPOINT CALLED ===");
+        System.out.println("Query: " + query);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "success");
+        Map<String, Object> data = new HashMap<>();
+        data.put("resultType", "matrix");
+        data.put("result", new Object[]{});
+        response.put("data", data);
+        
+        return ResponseEntity.ok()
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Credentials", "false")
+                .body(response);
+    }
+
     @GetMapping("/query")
     public ResponseEntity<Map<String, Object>> query(@RequestParam String query) {
         System.out.println("=== PROMETHEUS QUERY ENDPOINT CALLED ===");
@@ -79,35 +108,6 @@ public class ActuatorPrometheusController {
         data.put("buildUser", "spring-boot");
         data.put("buildDate", "2024-01-01T00:00:00Z");
         data.put("goVersion", "go1.21");
-        response.put("data", data);
-        return ResponseEntity.ok().headers(headers).body(response);
-    }
-
-    @GetMapping("/query_range")
-    public ResponseEntity<Map<String, Object>> queryRange(
-        @RequestParam String query,
-        @RequestParam String start,
-        @RequestParam String end,
-        @RequestParam String step) {
-        
-        System.out.println("=== PROMETHEUS QUERY_RANGE ENDPOINT CALLED ===");
-        System.out.println("Query: " + query);
-        System.out.println("Start: " + start + ", End: " + end + ", Step: " + step);
-        
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Access-Control-Allow-Origin", "*");
-        headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-        headers.add("Access-Control-Allow-Headers", "*");
-        headers.add("Access-Control-Allow-Credentials", "false");
-        
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", "success");
-        Map<String, Object> data = new HashMap<>();
-        data.put("resultType", "matrix");
-        
-        Object[] results = generateMetricData(query);
-        
-        data.put("result", results);
         response.put("data", data);
         return ResponseEntity.ok().headers(headers).body(response);
     }
