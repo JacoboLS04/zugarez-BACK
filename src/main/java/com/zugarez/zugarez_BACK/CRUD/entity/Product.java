@@ -1,4 +1,3 @@
-
 package com.zugarez.zugarez_BACK.CRUD.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -31,10 +30,16 @@ public class Product {
     @Column(name = "url_image")
     private String urlImage;
 
+    @Column(name = "stock_minimo", nullable = false)
+    private int stockMinimo;
+
+    @Column(name = "stock_actual", nullable = false)
+    private int stockActual;
+
     public Product() {
     }
 
-    public Product(int id, String name, double price, String brand, int supplierId, String description, String urlImage) {
+    public Product(int id, String name, double price, String brand, int supplierId, String description, String urlImage, int stockMinimo, int stockActual) {
         this.id = id;
         this.name = name;
         this.price = price;
@@ -42,6 +47,8 @@ public class Product {
         this.supplierId = supplierId;
         this.description = description;
         this.urlImage = urlImage;
+        this.stockMinimo = stockMinimo;
+        this.stockActual = stockActual;
     }
 
     public int getId() {
@@ -98,5 +105,21 @@ public class Product {
 
     public void setUrlImage(String urlImage) {
         this.urlImage = urlImage;
+    }
+
+    public int getStockMinimo() {
+        return stockMinimo;
+    }
+
+    public void setStockMinimo(int stockMinimo) {
+        this.stockMinimo = stockMinimo;
+    }
+
+    public int getStockActual() {
+        return stockActual;
+    }
+
+    public void setStockActual(int stockActual) {
+        this.stockActual = stockActual;
     }
 }
