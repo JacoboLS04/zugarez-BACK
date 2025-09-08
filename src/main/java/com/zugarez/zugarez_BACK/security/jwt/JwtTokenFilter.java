@@ -17,6 +17,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.zugarez.zugarez_BACK.security.service.UserDetailsServiceImpl;
 
+/**
+ * Security filter for validating JWT tokens on protected endpoints.
+ * Sets authentication in the security context if the token is valid.
+ */
 public class JwtTokenFilter extends OncePerRequestFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtTokenFilter.class);
@@ -27,6 +31,14 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     @Autowired
     UserDetailsServiceImpl userDetailsService;
 
+    /**
+     * Filters HTTP requests for JWT validation, skipping public endpoints.
+     * @param request the HTTP request
+     * @param response the HTTP response
+     * @param filterChain the filter chain
+     * @throws ServletException if a servlet error occurs
+     * @throws IOException if an input or output error occurs
+     */
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {

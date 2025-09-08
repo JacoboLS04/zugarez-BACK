@@ -12,6 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
+/**
+ * Service class for managing products.
+ * Provides business logic for CRUD operations on Product entities.
+ */
 @Service
 public class ProductService {
 
@@ -24,6 +28,10 @@ public class ProductService {
     // @Autowired
     // private Timer databaseQueryTimer;
 
+    /**
+     * Retrieves all products from the database.
+     * @return List of all products
+     */
     public List<Product> getAllProducts() {
         // Timer.Sample sample = Timer.start();
         try {
@@ -51,10 +59,22 @@ public class ProductService {
         }
     }
 
+    /**
+     * Retrieves a product by its ID.
+     * @param id Product ID
+     * @return Product with the given ID
+     * @throws ResourceNotFoundException if the product is not found
+     */
     public Product getProductById(int id) throws ResourceNotFoundException {
         return productRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("Producto no encontrado"));
     }
 
+    /**
+     * Saves a new product to the database.
+     * @param dto ProductDto containing product data
+     * @return The saved Product entity
+     * @throws AttributeException if a product with the same name already exists
+     */
     public Product saveProduct(ProductDto dto) throws AttributeException {
         if(productRepository.existsByName(dto.getName())) {
             throw new AttributeException("Ya existe un producto con ese nombre");
@@ -75,6 +95,14 @@ public class ProductService {
         return savedProduct;
     }
 
+    /**
+     * Updates an existing product in the database.
+     * @param id Product ID
+     * @param dto ProductDto containing updated data
+     * @return The updated Product entity
+     * @throws ResourceNotFoundException if the product is not found
+     * @throws AttributeException if a product with the same name already exists
+     */
     public Product updateProduct(int id, ProductDto dto) throws ResourceNotFoundException, AttributeException {
         Product product = productRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
         if(productRepository.existsByName(dto.getName()) && productRepository.findByName(dto.getName()).get().getId() != id) {
@@ -91,6 +119,12 @@ public class ProductService {
         return productRepository.save(product);
     }
 
+    /**
+     * Deletes a product from the database.
+     * @param id Product ID
+     * @return The deleted Product entity
+     * @throws ResourceNotFoundException if the product is not found
+     */
     public Product deleteProduct(int id) throws ResourceNotFoundException {
         Product product = productRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
         productRepository.delete(product);

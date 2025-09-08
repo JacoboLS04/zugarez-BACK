@@ -18,6 +18,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * REST controller for managing products.
+ * Provides endpoints for CRUD operations and debugging on Product entities.
+ */
 @RestController
 @RequestMapping("/products")
 public class ProductController {
@@ -31,12 +35,22 @@ public class ProductController {
     @PersistenceContext
     private EntityManager entityManager;
 
+    /**
+     * Retrieves all products.
+     * @return List of all products
+     */
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @GetMapping
     public ResponseEntity<List<Product>> getAll() {
         return ResponseEntity.ok(productService.getAllProducts());
     }
 
+    /**
+     * Retrieves a product by its ID.
+     * @param id Product ID
+     * @return The product with the given ID
+     * @throws ResourceNotFoundException if the product is not found
+     */
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<Product> getOne(@PathVariable("id") int id) throws ResourceNotFoundException {
@@ -44,6 +58,12 @@ public class ProductController {
         return ResponseEntity.ok(productService.getProductById(id));
     }
 
+    /**
+     * Creates a new product.
+     * @param dto ProductDto with product data
+     * @return MessageDto with creation status
+     * @throws AttributeException if a product with the same name already exists
+     */
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<MessageDto> save(@Valid @RequestBody ProductDto dto) throws AttributeException {
@@ -52,6 +72,14 @@ public class ProductController {
         return ResponseEntity.ok(new MessageDto(HttpStatus.OK, message));
     }
 
+    /**
+     * Updates an existing product.
+     * @param id Product ID
+     * @param dto ProductDto with updated data
+     * @return MessageDto with update status
+     * @throws ResourceNotFoundException if the product is not found
+     * @throws AttributeException if a product with the same name already exists
+     */
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<MessageDto> update(@PathVariable("id") int id, @Valid @RequestBody ProductDto dto) throws ResourceNotFoundException, AttributeException {
@@ -60,6 +88,12 @@ public class ProductController {
         return ResponseEntity.ok(new MessageDto(HttpStatus.OK, message));
     }
 
+    /**
+     * Deletes a product by its ID.
+     * @param id Product ID
+     * @return MessageDto with deletion status
+     * @throws ResourceNotFoundException if the product is not found
+     */
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<MessageDto> delete(@PathVariable("id") int id) throws ResourceNotFoundException {
@@ -68,7 +102,12 @@ public class ProductController {
         return ResponseEntity.ok(new MessageDto(HttpStatus.OK, message));
     }
 
-    // Endpoint para testing - devuelve el producto completo
+    /**
+     * Testing endpoint: creates a product and returns the full Product entity.
+     * @param dto ProductDto with product data
+     * @return The created Product entity
+     * @throws AttributeException if a product with the same name already exists
+     */
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/test")
     public ResponseEntity<Product> saveAndReturn(@Valid @RequestBody ProductDto dto) throws AttributeException {
@@ -76,7 +115,10 @@ public class ProductController {
         return ResponseEntity.ok(product);
     }
 
-    // Endpoint de debug con SQL nativo
+    /**
+     * Debug endpoint: executes a native SQL query and returns the raw results.
+     * @return List of Object arrays with product data
+     */
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @GetMapping("/debug-sql")
     public ResponseEntity<?> debugSql() {
@@ -101,4 +143,3 @@ public class ProductController {
     }
 
 }
-

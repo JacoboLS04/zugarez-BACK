@@ -6,8 +6,20 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import jakarta.mail.internet.MimeMessage;
 
+/**
+ * Service for sending emails related to login codes and account verification.
+ * Uses JavaMailSender to send HTML emails for authentication and verification flows.
+ */
 @Service
 public class EmailService {
+    @Autowired
+    private JavaMailSender mailSender;
+
+    /**
+     * Sends a login code email to the specified recipient.
+     * @param to Recipient email address
+     * @param code Login code to send
+     */
     public void sendLoginCodeEmail(String to, int code) {
         try {
             System.out.println("[EmailService] Enviando código de login a: " + to);
@@ -35,9 +47,12 @@ public class EmailService {
             e.printStackTrace();
         }
     }
-    @Autowired
-    private JavaMailSender mailSender;
 
+    /**
+     * Sends an account verification email with a verification token link.
+     * @param to Recipient email address
+     * @param token Verification token
+     */
     public void sendVerificationEmail(String to, String token) {
         try {
             System.out.println("[EmailService] Enviando correo de verificación a: " + to);

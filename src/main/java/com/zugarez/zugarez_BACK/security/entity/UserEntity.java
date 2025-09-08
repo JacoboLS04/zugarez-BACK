@@ -5,36 +5,63 @@ import jakarta.persistence.*;
 import java.util.List;
 import java.time.LocalDateTime;
 
+/**
+ * Entity representing a user in the system.
+ * Stores authentication, verification, and role information.
+ */
 @Entity
 @Table(name = "users")
 public class UserEntity {
+    /** Indicates if the user is verified */
     @Column(name = "verified")
     private boolean verified = false;
 
+    /** Token used for email verification */
     @Column(name = "verification_token")
     private String verificationToken;
 
+    /** Code used for login verification */
     @Column(name = "login_code")
     private String loginCode;
     
+    /** Expiry time for the login code */
     @Column(name = "login_code_expiry")
     private LocalDateTime loginCodeExpiry;
+    /** Unique identifier for the user */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
+    /** Username of the user */
     private String username;
+    /** Email address of the user */
     private String email;
+    /** Encrypted password of the user */
     private String password;
+    /** List of roles assigned to the user */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
     private List<RoleEnum> roles;
 
-
+    /**
+     * Default constructor.
+     */
     public UserEntity() {
     }
 
+    /**
+     * Full constructor for UserEntity.
+     * @param id user ID
+     * @param username username
+     * @param email email address
+     * @param password encrypted password
+     * @param roles list of roles
+     * @param verified verification status
+     * @param verificationToken email verification token
+     * @param loginCode login code
+     * @param loginCodeExpiry login code expiry
+     */
     public UserEntity(int id, String username, String email, String password, List<RoleEnum> roles, boolean verified, String verificationToken, String loginCode, LocalDateTime loginCodeExpiry) {
         this.id = id;
         this.username = username;
@@ -46,14 +73,24 @@ public class UserEntity {
         this.loginCode = loginCode;
         this.loginCodeExpiry = loginCodeExpiry;
     }
+    /**
+     * Checks if the user is verified.
+     * @return true if verified
+     */
     public boolean isVerified() {
         return verified;
     }
-
+    /**
+     * Sets the verification status.
+     * @param verified true if verified
+     */
     public void setVerified(boolean verified) {
         this.verified = verified;
     }
-
+    /**
+     * Gets the verification token.
+     * @return verification token
+     */
     public String getVerificationToken() {
         return verificationToken;
     }
