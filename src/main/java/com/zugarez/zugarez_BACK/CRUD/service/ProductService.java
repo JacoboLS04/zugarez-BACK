@@ -66,6 +66,8 @@ public class ProductService {
         product.setSupplierId(dto.getSupplierId());
         product.setDescription(dto.getDescription());
         product.setUrlImage(dto.getUrlImage());
+        product.setStockMinimo(dto.getStockMinimo());
+        product.setStockActual(dto.getStockActual());
         System.out.println("Se intenta guardar el producto: " + dto.getName());
 
         Product savedProduct = productRepository.save(product);
@@ -84,6 +86,8 @@ public class ProductService {
         product.setSupplierId(dto.getSupplierId());
         product.setDescription(dto.getDescription());
         product.setUrlImage(dto.getUrlImage());
+        product.setStockMinimo(dto.getStockMinimo());
+        product.setStockActual(dto.getStockActual());
         return productRepository.save(product);
     }
 
