@@ -70,13 +70,20 @@ public class LoteController {
         System.out.println("UnitPrice: " + dto.getUnitPrice());
         
         Lote lote = loteService.saveLote(dto);
-        ActualizarStockProducto(dto.getProductId());
+        ActualizarStockProducto(dto.getProductId() , dto.getInitialQuantity());
         //so
         
         System.out.println("🔍 DEBUG LoteController - Lote creado con ID: " + lote.getId());
         
         String message = "Lote #" + lote.getId() + " creado correctamente";
         return ResponseEntity.ok(new MessageDto(HttpStatus.OK, message));
+    }
+
+    private void ActualizarStockProducto(int productId, int cantidadNueva) throws ResourceNotFoundException {
+        int stockActual = loteService.getStockTotalByProduct(productId);
+        int nuevoStock = stockActual + cantidadNueva;
+        loteService.updateProductStock(productId, nuevoStock);
+        System.out.println("🔍 DEBUG LoteController - Stock del producto ID " + productId + " actualizado a: " + nuevoStock);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
