@@ -70,12 +70,27 @@ public class LoteController {
         System.out.println("UnitPrice: " + dto.getUnitPrice());
         
         Lote lote = loteService.saveLote(dto);
+
+        ActualizarStockProducto(dto.getProductId() , dto.getAvailableQuantity());
         
         System.out.println("🔍 DEBUG LoteController - Lote creado con ID: " + lote.getId());
         
         String message = "Lote #" + lote.getId() + " creado correctamente";
         return ResponseEntity.ok(new MessageDto(HttpStatus.OK, message));
     }
+
+    private void ActualizarStockProducto(Integer productId, int availableQuantity) {
+
+        try {
+            int stockActual = loteService.getStockTotalByProduct(productId);
+            int nuevoStock = stockActual + availableQuantity;
+            loteService.updateProductStock(productId, nuevoStock);
+            System.out.println("🔍 DEBUG LoteController - Stock del producto ID " + productId + " actualizado a: " + nuevoStock);
+        } catch (Exception e) {
+            System.err.println("❌ ERROR LoteController - No se pudo actualizar el stock del producto ID " + productId + ": " + e.getMessage());
+        }
+    }
+
 
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")

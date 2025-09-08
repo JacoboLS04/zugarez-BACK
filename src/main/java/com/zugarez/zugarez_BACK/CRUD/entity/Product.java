@@ -122,4 +122,8 @@ public class Product {
     public void setStockActual(int stockActual) {
         this.stockActual = stockActual;
     }
+
+    public void setStock(int nuevoStock) {
+        this.stockActual = nuevoStock;
+    }
 }

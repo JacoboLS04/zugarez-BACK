@@ -134,4 +134,12 @@ public class LoteService {
         loteRepository.save(lote);
         return true;
     }
+
+    public void updateProductStock(Integer productId, int nuevoStock) throws ResourceNotFoundException {
+
+        productRepository.findById(productId).ifPresent(product -> {
+            product.setStock(nuevoStock);
+            productRepository.save(product);
+        });
+    }
 }
