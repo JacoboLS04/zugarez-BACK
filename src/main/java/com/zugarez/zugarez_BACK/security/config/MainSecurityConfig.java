@@ -18,6 +18,10 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
 
+/**
+ * Spring Security configuration class for the Zugarez backend.
+ * Configures authentication, authorization, JWT, and CORS settings.
+ */
 @Configuration
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
@@ -38,6 +42,12 @@ public class MainSecurityConfig {
     @Autowired
     CorsConfigurationSource corsConfigurationSource;
 
+    /**
+     * Configures the security filter chain for HTTP requests.
+     * @param http the HttpSecurity object
+     * @return the configured SecurityFilterChain
+     * @throws Exception if a security configuration error occurs
+     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         AuthenticationManagerBuilder builder = http.getSharedObject(AuthenticationManagerBuilder.class);

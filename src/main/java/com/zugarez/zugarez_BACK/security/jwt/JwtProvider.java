@@ -19,6 +19,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Component for generating, parsing, and validating JWT tokens.
+ * Handles token creation, extraction of username, and validation logic.
+ */
 @Component
 public class JwtProvider {
 
@@ -30,6 +34,11 @@ public class JwtProvider {
     @Value("${jwt.expiration}")
     private int expiration;
 
+    /**
+     * Generates a JWT token for the authenticated user.
+     * @param authentication the authentication object
+     * @return the generated JWT token
+     */
     public String generateToken(Authentication authentication) {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
         return Jwts.builder()
@@ -41,6 +50,11 @@ public class JwtProvider {
                 .compact();
     }
 
+    /**
+     * Extracts the username from a JWT token.
+     * @param token the JWT token
+     * @return the username
+     */
     public String getUsernameFromToken(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getKey(secret))
@@ -50,6 +64,11 @@ public class JwtProvider {
                 .getSubject();
     }
 
+    /**
+     * Validates a JWT token.
+     * @param token the JWT token
+     * @return true if the token is valid, false otherwise
+     */
     public boolean validateToken(String token) {
         System.out.println("Validando token: " + (token != null ? token.substring(0, Math.min(20, token.length())) + "..." : "null"));
         try {

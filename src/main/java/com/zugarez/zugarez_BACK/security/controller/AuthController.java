@@ -18,6 +18,10 @@ import java.util.Optional;
 import java.time.LocalDateTime;
 import java.util.Random;
 
+/**
+ * REST controller for authentication and user verification endpoints.
+ * Handles user login, registration, and verification code logic.
+ */
 @RestController
 @RequestMapping("/auth")
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -31,6 +35,11 @@ public class AuthController {
     @Autowired
     com.zugarez.zugarez_BACK.global.service.EmailService emailService;
 
+    /**
+     * Verifies a code for a user by email or username.
+     * @param dto VerificationCodeDto containing email/username and code
+     * @return ResponseEntity with verification result
+     */
     @PostMapping("/verify-code")
     public ResponseEntity<?> verifyCode(@Valid @RequestBody com.zugarez.zugarez_BACK.security.dto.VerificationCodeDto dto) {
         System.out.println("=== MÉTODO /verify-code EJECUTÁNDOSE ===");

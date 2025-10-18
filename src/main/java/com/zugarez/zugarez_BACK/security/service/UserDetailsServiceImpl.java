@@ -11,12 +11,22 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
+/**
+ * Implementation of UserDetailsService for Spring Security authentication.
+ * Loads user details from the database using UserEntityRepository.
+ */
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Autowired
     UserEntityRepository userEntityRepository;
 
+    /**
+     * Loads a user by username for authentication.
+     * @param username the username to search for
+     * @return UserDetails for authentication
+     * @throws UsernameNotFoundException if the user is not found
+     */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         System.out.println("=== CARGANDO USUARIO PARA AUTENTICACIÓN ===");
