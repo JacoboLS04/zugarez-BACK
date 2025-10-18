@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Optional;
 import java.time.LocalDateTime;
 import java.util.Random;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * REST controller for authentication and user verification endpoints.
@@ -98,6 +100,15 @@ public class AuthController {
         user.setLoginCode(null);
         user.setLoginCodeExpiry(null);
         userEntityRepository.save(user);
+        
+        // Bloquear emisión de token si el usuario fue desactivado (baja voluntaria)
+        if (!user.isVerified() && user.getDeactivatedAt() != null) {
+            Map<String,Object> body = new HashMap<>();
+            body.put("error", "Tu cuenta ha sido desactivada");
+            body.put("message", "Tu solicitud de baja fue procesada. Contacta soporte si deseas reactivar tu cuenta.");
+            body.put("deactivatedAt", user.getDeactivatedAt());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+        }
         
         JwtTokenDto jwtTokenDto = userEntityService.loginByUser(user);
         System.out.println("=== JWT GENERADO ===");

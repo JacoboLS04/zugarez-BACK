@@ -44,6 +44,13 @@ public class UserEntity {
     @Enumerated(EnumType.STRING)
     private List<RoleEnum> roles;
 
+    /** Motivo de desactivación (nullable) */
+    @Column(name = "deactivation_reason")
+    private String deactivationReason;
+    /** Fecha/hora de desactivación (nullable) */
+    @Column(name = "deactivated_at")
+    private LocalDateTime deactivatedAt;
+
     /**
      * Default constructor.
      */
@@ -154,6 +161,22 @@ public class UserEntity {
 
     public void setRoles(List<RoleEnum> roles) {
         this.roles = roles;
+    }
+
+    public String getDeactivationReason() {
+        return deactivationReason;
+    }
+
+    public void setDeactivationReason(String deactivationReason) {
+        this.deactivationReason = deactivationReason;
+    }
+
+    public LocalDateTime getDeactivatedAt() {
+        return deactivatedAt;
+    }
+
+    public void setDeactivatedAt(LocalDateTime deactivatedAt) {
+        this.deactivatedAt = deactivatedAt;
     }
 
 

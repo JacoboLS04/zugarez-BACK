@@ -36,6 +36,7 @@ public class JwtProvider {
 
     /**
      * Generates a JWT token for the authenticated user.
+     * Adds userId claim so we can extract it later.
      * @param authentication the authentication object
      * @return the generated JWT token
      */
@@ -44,6 +45,7 @@ public class JwtProvider {
         return Jwts.builder()
                 .signWith(getKey(secret))
                 .setSubject(userPrincipal.getUsername())
+                .claim("userId", userPrincipal.getId()) // <-- agrega claim userId
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(new Date().getTime() + expiration * 1000))
                 .claim("roles", getRoles(userPrincipal))
@@ -62,6 +64,29 @@ public class JwtProvider {
                 .parseClaimsJws(token)
                 .getBody()
                 .getSubject();
+    }
+
+    /**
+     * Extracts the userId claim (if present) from the JWT token.
+     * @param token the JWT token
+     * @return userId or null if not present / parsable
+     */
+    public Integer getUserIdFromToken(String token) {
+        try {
+            Object claim = Jwts.parserBuilder()
+                    .setSigningKey(getKey(secret))
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody()
+                    .get("userId");
+            if (claim == null) return null;
+            if (claim instanceof Integer) return (Integer) claim;
+            if (claim instanceof Long) return ((Long) claim).intValue();
+            if (claim instanceof String) return Integer.parseInt((String) claim);
+        } catch (Exception e) {
+            logger.warn("No se pudo extraer userId del token: {}", e.getMessage());
+        }
+        return null;
     }
 
     /**
