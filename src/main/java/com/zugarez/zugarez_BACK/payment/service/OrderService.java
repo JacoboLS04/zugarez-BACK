@@ -36,19 +36,16 @@ public class OrderService {
         System.out.println("Usuario: " + user.getUsername() + " (ID: " + user.getId() + ")");
         System.out.println("Items: " + request.getItems().size());
         
-        // Validar que haya items
         if (request.getItems() == null || request.getItems().isEmpty()) {
             throw new RuntimeException("El carrito está vacío");
         }
         
-        // Calcular totales
         BigDecimal subtotal = BigDecimal.ZERO;
         List<OrderItem> orderItems = new ArrayList<>();
 
         for (CheckoutRequest.CartItem cartItem : request.getItems()) {
             System.out.println("Procesando producto ID: " + cartItem.productId + ", cantidad: " + cartItem.quantity);
             
-            // Validar cantidad
             if (cartItem.quantity == null || cartItem.quantity <= 0) {
                 throw new RuntimeException("Cantidad inválida para producto ID: " + cartItem.productId);
             }
@@ -60,12 +57,10 @@ public class OrderService {
 
             Product product = productOpt.get();
             
-            // Validar que el producto tenga precio (comparar con 0.0 para Double)
-            if (product.getPrice() == null || product.getPrice() <= 0.0) { // ✅ Comparar con 0.0
+            if (product.getPrice() <= 0.0) {
                 throw new RuntimeException("Producto sin precio válido: " + product.getName());
             }
             
-            // Convertir Double a BigDecimal para cálculos
             BigDecimal price = BigDecimal.valueOf(product.getPrice());
             BigDecimal itemSubtotal = price.multiply(BigDecimal.valueOf(cartItem.quantity));
             subtotal = subtotal.add(itemSubtotal);
@@ -80,7 +75,6 @@ public class OrderService {
             System.out.println("Producto: " + product.getName() + " - Precio: " + price + " - Subtotal: " + itemSubtotal);
         }
 
-        // Calcular impuestos (5% IVA)
         BigDecimal tax = subtotal.multiply(BigDecimal.valueOf(0.05));
         BigDecimal total = subtotal.add(tax);
         
@@ -88,7 +82,6 @@ public class OrderService {
         System.out.println("Impuestos (5%): " + tax);
         System.out.println("Total: " + total);
 
-        // Crear orden
         Order order = new Order();
         order.setUser(user);
         order.setSubtotal(subtotal);
@@ -96,11 +89,9 @@ public class OrderService {
         order.setTotal(total);
         order.setStatus(OrderStatus.PENDING);
 
-        // Guardar orden primero
         order = orderRepository.save(order);
         System.out.println("Orden guardada con ID: " + order.getId());
 
-        // Asociar items a la orden y guardar
         final Order savedOrder = order;
         orderItems.forEach(item -> item.setOrder(savedOrder));
         order.setItems(orderItems);
@@ -109,7 +100,6 @@ public class OrderService {
         System.out.println("Items asociados a la orden: " + order.getItems().size());
 
         try {
-            // Crear preferencia de MercadoPago
             Preference preference = mercadoPagoService.createPreference(order);
             order.setMercadopagoPreferenceId(preference.getId());
             order = orderRepository.save(order);
@@ -119,7 +109,6 @@ public class OrderService {
             
         } catch (Exception e) {
             System.err.println("❌ Error creando preferencia de MercadoPago: " + e.getMessage());
-            // Marcar orden como fallida
             order.setStatus(OrderStatus.FAILED);
             orderRepository.save(order);
             throw new RuntimeException("Error al crear preferencia de pago: " + e.getMessage(), e);
