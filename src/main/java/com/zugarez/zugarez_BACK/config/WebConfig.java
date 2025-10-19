@@ -22,9 +22,13 @@ public class WebConfig implements WebMvcConfigurer {
         logger.info("Registrando AuthInterceptor");
         registry.addInterceptor(authInterceptor)
                 .addPathPatterns("/api/**", "/payment/**")
-                .excludePathPatterns("/auth/**", "/actuator/**", "/payment/webhook");
+                .excludePathPatterns("/auth/**", "/actuator/**", 
+                                   "/payment/webhook", 
+                                   "/payment/success",
+                                   "/payment/failure",
+                                   "/payment/pending");
         logger.info("AuthInterceptor registrado correctamente");
-        logger.info("Rutas protegidas: /api/**, /payment/** (excepto /payment/webhook)");
+        logger.info("Rutas protegidas: /api/**, /payment/** (excepto callbacks)");
     }
 
     @Override

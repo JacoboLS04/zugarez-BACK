@@ -61,6 +61,9 @@ public class MainSecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/payment/webhook").permitAll() // ✅ Webhook público
+                        .requestMatchers("/payment/success").permitAll() // ✅ Callback de éxito
+                        .requestMatchers("/payment/failure").permitAll() // ✅ Callback de fallo
+                        .requestMatchers("/payment/pending").permitAll() // ✅ Callback pendiente
                         .requestMatchers("/payment/**").authenticated() // ✅ Requiere autenticación
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/**").authenticated()

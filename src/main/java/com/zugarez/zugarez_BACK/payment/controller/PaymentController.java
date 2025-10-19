@@ -169,6 +169,112 @@ public class PaymentController {
         }
     }
 
+    @GetMapping("/success")
+    public ResponseEntity<?> paymentSuccess(
+            @RequestParam("collection_id") String collectionId,
+            @RequestParam("collection_status") String collectionStatus,
+            @RequestParam("payment_id") String paymentId,
+            @RequestParam("status") String status,
+            @RequestParam("external_reference") String externalReference,
+            @RequestParam(value = "preference_id", required = false) String preferenceId) {
+        
+        System.out.println("=== PAGO EXITOSO - CALLBACK RECIBIDO ===");
+        System.out.println("Payment ID: " + paymentId);
+        System.out.println("Status: " + status);
+        System.out.println("Collection Status: " + collectionStatus);
+        System.out.println("External Reference (Order ID): " + externalReference);
+        System.out.println("Preference ID: " + preferenceId);
+        
+        try {
+            Integer orderId = Integer.parseInt(externalReference);
+            
+            // Actualizar estado de la orden
+            OrderStatus newStatus;
+            if ("approved".equals(status) || "approved".equals(collectionStatus)) {
+                newStatus = OrderStatus.APPROVED;
+            } else if ("pending".equals(status)) {
+                newStatus = OrderStatus.PENDING;
+            } else {
+                newStatus = OrderStatus.FAILED;
+            }
+            
+            Order order = orderService.updateOrderStatus(preferenceId, newStatus, paymentId);
+            
+            System.out.println("✅ Orden actualizada: " + order.getId() + " - Estado: " + newStatus);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("orderId", order.getId());
+            response.put("status", order.getStatus());
+            response.put("paymentId", paymentId);
+            response.put("total", order.getTotal());
+            response.put("message", "Pago procesado exitosamente");
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error procesando callback de éxito: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error procesando el pago: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/failure")
+    public ResponseEntity<?> paymentFailure(
+            @RequestParam(value = "external_reference", required = false) String externalReference,
+            @RequestParam(value = "preference_id", required = false) String preferenceId) {
+        
+        System.out.println("=== PAGO FALLIDO - CALLBACK RECIBIDO ===");
+        System.out.println("External Reference (Order ID): " + externalReference);
+        System.out.println("Preference ID: " + preferenceId);
+        
+        try {
+            if (preferenceId != null) {
+                Order order = orderService.updateOrderStatus(preferenceId, OrderStatus.FAILED, null);
+                System.out.println("❌ Orden marcada como fallida: " + order.getId());
+            }
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "El pago fue rechazado o cancelado");
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error procesando callback de fallo: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error procesando el fallo"));
+        }
+    }
+
+    @GetMapping("/pending")
+    public ResponseEntity<?> paymentPending(
+            @RequestParam(value = "external_reference", required = false) String externalReference,
+            @RequestParam(value = "preference_id", required = false) String preferenceId) {
+        
+        System.out.println("=== PAGO PENDIENTE - CALLBACK RECIBIDO ===");
+        System.out.println("External Reference (Order ID): " + externalReference);
+        
+        try {
+            if (preferenceId != null) {
+                Order order = orderService.updateOrderStatus(preferenceId, OrderStatus.PENDING, null);
+                System.out.println("⏳ Orden marcada como pendiente: " + order.getId());
+            }
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "El pago está pendiente de confirmación");
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error procesando callback pendiente: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error procesando el estado pendiente"));
+        }
+    }
+
     @PostMapping("/webhook")
     public ResponseEntity<?> webhook(@RequestBody Map<String, Object> payload) {
         System.out.println("=== WEBHOOK MERCADOPAGO ===");
