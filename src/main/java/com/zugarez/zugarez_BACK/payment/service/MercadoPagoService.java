@@ -28,33 +28,37 @@ public class MercadoPagoService {
 
     @PostConstruct
     public void init() {
+        // ⚠️ FORZAR CREDENCIALES CORRECTAS (temporal)
+        accessToken = "APP_USR-6665299493334563-101915-1093769ec14a844034dce5ac73b33946-2932784465";
+        publicKey = "APP_USR-717fb670-7294-4084-aa58-328bd30944cd";
+        
         if (accessToken == null || accessToken.isEmpty()) {
             System.err.println("⚠️ MercadoPago Access Token no configurado.");
         } else {
             MercadoPagoConfig.setAccessToken(accessToken);
             System.out.println("✅ MercadoPago configurado correctamente");
-            System.out.println("Access Token: " + accessToken.substring(0, Math.min(20, accessToken.length())) + "...");
+            System.out.println("Access Token COMPLETO: " + accessToken);
+            System.out.println("");
             
             // Verificar el User ID del token
             String[] parts = accessToken.split("-");
             String userId = parts.length > 0 ? parts[parts.length - 1] : "desconocido";
             
+            System.out.println("🔍 USER ID DETECTADO: " + userId);
+            
             if (userId.equals("2932784465")) {
-                System.out.println("✅ Usuario vendedor de prueba CORRECTO (ID: 2932784465)");
-                System.out.println("🧪 Modo SANDBOX con usuario vinculado");
-                System.out.println("");
-                System.out.println("🎯 CREDENCIALES DE PRUEBA CONFIGURADAS:");
-                System.out.println("   Vendedor: zugarez_vendedor (ID: 2932784465)");
-                System.out.println("   Comprador: TESTUSER7191328507680256966");
-            } else if (accessToken.startsWith("TEST-")) {
-                System.out.println("🧪 Modo SANDBOX");
-            } else if (accessToken.startsWith("APP_USR-")) {
-                System.out.println("🔴 Modo PRODUCCIÓN/PRUEBA");
+                System.out.println("✅✅✅ CORRECTO - Usuario vendedor de prueba (2932784465)");
+            } else if (userId.equals("1973438030")) {
+                System.err.println("❌❌❌ ERROR - Usando cuenta PRINCIPAL (1973438030)");
+                System.err.println("❌ Las credenciales NO se actualizaron correctamente");
+                throw new RuntimeException("Credenciales incorrectas - revisa application.properties");
+            } else {
+                System.err.println("⚠️ User ID desconocido: " + userId);
             }
         }
         
         if (publicKey != null && !publicKey.isEmpty()) {
-            System.out.println("Public Key: " + publicKey.substring(0, Math.min(20, publicKey.length())) + "...");
+            System.out.println("Public Key: " + publicKey);
         }
     }
 
