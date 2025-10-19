@@ -105,9 +105,9 @@ public class MercadoPagoService {
             }
 
             PreferenceBackUrlsRequest backUrls = PreferenceBackUrlsRequest.builder()
-                .success("https://zugarez.vercel.app/payment/success")
-                .failure("https://zugarez.vercel.app/payment/failure")
-                .pending("https://zugarez.vercel.app/payment/pending")
+                .success("https://better-billi-zugarez-sys-ed7b78de.koyeb.app/payment/success")
+                .failure("https://better-billi-zugarez-sys-ed7b78de.koyeb.app/payment/failure")
+                .pending("https://better-billi-zugarez-sys-ed7b78de.koyeb.app/payment/pending")
                 .build();
 
             // ✅ Configuración para permitir todos los métodos de pago sin restricciones
