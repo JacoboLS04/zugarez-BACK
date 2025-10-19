@@ -1,13 +1,15 @@
 package com.zugarez.zugarez_BACK.security.interceptor;
 
 import com.zugarez.zugarez_BACK.security.entity.UserEntity;
-import com.zugarez.zugarez_BACK.security.jwt.JwtProvider;
 import com.zugarez.zugarez_BACK.security.repository.UserEntityRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -24,56 +26,40 @@ public class AuthInterceptor implements HandlerInterceptor {
     private static final Logger logger = LoggerFactory.getLogger(AuthInterceptor.class);
 
     @Autowired
-    private JwtProvider jwtProvider;
-
-    @Autowired
     private UserEntityRepository userRepository;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         try {
-            logger.info("=== AUTH INTERCEPTOR ===");
-            logger.info("Request URL: {} | Method: {}", request.getRequestURL(), request.getMethod());
+            // Obtener autenticación del SecurityContext (ya establecida por JwtFilter)
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             
-            String token = getTokenFromRequest(request);
-            
-            if (token == null) {
-                logger.warn("Token ausente en la petición");
-                return true; // Dejar pasar, Spring Security se encargará
+            if (authentication == null || !authentication.isAuthenticated()) {
+                logger.debug("Sin autenticación en SecurityContext - permitiendo que Spring Security maneje");
+                return true;
             }
             
-            logger.debug("Token extraído (longitud: {})", token.length());
-            
-            if (!jwtProvider.validateToken(token)) {
-                logger.error("Token inválido o expirado");
-                sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Token inválido o expirado");
-                return false;
+            Object principal = authentication.getPrincipal();
+            if (!(principal instanceof UserDetails)) {
+                logger.debug("Principal no es UserDetails - permitiendo acceso");
+                return true;
             }
             
-            logger.info("Token válido");
-            String username = jwtProvider.getUsernameFromToken(token);
-            
-            if (username == null || username.trim().isEmpty()) {
-                logger.error("Username extraído del token es nulo o vacío");
-                sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Token inválido");
-                return false;
-            }
-            
-            logger.info("Username del token: {}", username);
+            String username = ((UserDetails) principal).getUsername();
+            logger.debug("Verificando estado del usuario: {}", username);
             
             Optional<UserEntity> userOpt = userRepository.findByUsername(username);
             
             if (!userOpt.isPresent()) {
-                logger.warn("Usuario no encontrado en BD: {} - Dejando pasar para que Spring Security maneje", username);
-                return true; // Dejar que Spring Security maneje este caso
+                logger.warn("Usuario autenticado no encontrado en BD: {}", username);
+                return true; // Usuario válido en JWT pero no en BD (caso raro)
             }
             
             UserEntity user = userOpt.get();
-            logger.info("Usuario encontrado: {} (ID: {})", user.getUsername(), user.getId());
             
             // Solo bloquear si el usuario está desactivado
             if (user.getDeactivatedAt() != null) {
-                logger.warn("Usuario desactivado - Bloqueando acceso: {}", username);
+                logger.warn("Usuario desactivado intentando acceder - Bloqueando: {}", username);
                 sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, 
                     String.format("{\"error\":\"Tu cuenta ha sido desactivada\",\"deactivatedAt\":\"%s\"}", 
                     user.getDeactivatedAt()));
@@ -82,7 +68,7 @@ public class AuthInterceptor implements HandlerInterceptor {
             
             // Agregar el usuario al request para uso en controladores
             request.setAttribute("authenticatedUser", user);
-            logger.info("Usuario autenticado correctamente y agregado al request");
+            logger.debug("Usuario verificado y agregado al request: {}", username);
             
             return true;
             
@@ -96,14 +82,6 @@ public class AuthInterceptor implements HandlerInterceptor {
             return false;
         }
     }
-
-    private String getTokenFromRequest(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
-        }
-        return null;
-    }
     
     private void sendErrorResponse(HttpServletResponse response, int status, String message) throws IOException {
         if (response.isCommitted()) {
@@ -113,10 +91,7 @@ public class AuthInterceptor implements HandlerInterceptor {
         response.setStatus(status);
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
-        
-        // Escapar comillas en el mensaje si es necesario
-        String jsonMessage = message.startsWith("{") ? message : "{\"error\":\"" + message.replace("\"", "\\\"") + "\"}";
-        response.getWriter().write(jsonMessage);
+        response.getWriter().write(message);
         response.getWriter().flush();
     }
 }
