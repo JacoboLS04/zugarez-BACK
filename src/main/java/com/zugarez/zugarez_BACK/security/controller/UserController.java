@@ -124,27 +124,39 @@ public class UserController {
     public ResponseEntity<?> getDeactivatedUsers() {
         System.out.println("=== ENDPOINT /admin/users/deactivated LLAMADO ===");
         
-        List<UserEntity> deactivatedUsers = userRepository.findAll().stream()
-            .filter(u -> u.getDeactivatedAt() != null)
-            .collect(Collectors.toList());
-        
-        System.out.println("Usuarios desactivados encontrados: " + deactivatedUsers.size());
-        
-        List<Map<String, Object>> userList = deactivatedUsers.stream().map(user -> {
-            Map<String, Object> userMap = new HashMap<>();
-            userMap.put("id", user.getId());
-            userMap.put("username", user.getUsername());
-            userMap.put("email", user.getEmail());
-            userMap.put("deactivatedAt", user.getDeactivatedAt());
-            userMap.put("deactivationReason", user.getDeactivationReason());
-            userMap.put("verified", user.isVerified());
-            return userMap;
-        }).collect(Collectors.toList());
-        
-        return ResponseEntity.ok(Map.of(
-            "total", userList.size(),
-            "users", userList
-        ));
+        try {
+            // Usar findAll() y filtrar en memoria (más simple)
+            List<UserEntity> allUsers = userRepository.findAll();
+            System.out.println("Total usuarios en BD: " + allUsers.size());
+            
+            List<UserEntity> deactivatedUsers = allUsers.stream()
+                .filter(u -> u.getDeactivatedAt() != null)
+                .collect(Collectors.toList());
+            
+            System.out.println("Usuarios desactivados encontrados: " + deactivatedUsers.size());
+            
+            List<Map<String, Object>> userList = deactivatedUsers.stream().map(user -> {
+                Map<String, Object> userMap = new HashMap<>();
+                userMap.put("id", user.getId());
+                userMap.put("username", user.getUsername());
+                userMap.put("email", user.getEmail());
+                userMap.put("deactivatedAt", user.getDeactivatedAt().toString());
+                userMap.put("deactivationReason", user.getDeactivationReason());
+                userMap.put("verified", user.isVerified());
+                return userMap;
+            }).collect(Collectors.toList());
+            
+            return ResponseEntity.ok(Map.of(
+                "total", userList.size(),
+                "users", userList
+            ));
+            
+        } catch (Exception e) {
+            System.out.println("ERROR al listar usuarios desactivados: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error al obtener usuarios desactivados: " + e.getMessage()));
+        }
     }
 
     /**
