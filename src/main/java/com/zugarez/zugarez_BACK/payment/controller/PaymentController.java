@@ -81,8 +81,23 @@ public class PaymentController {
             response.put("sandboxUrl", sandboxUrl);
             response.put("checkoutUrl", sandboxUrl);
 
-            System.out.println("Sandbox URL: " + sandboxUrl);
-            System.out.println("⚠️ IMPORTANTE: Debes estar logueado con el usuario de prueba en MercadoPago");
+            System.out.println("✅ Sandbox URL generada: " + sandboxUrl);
+            System.out.println("");
+            System.out.println("📋 INSTRUCCIONES PARA PROBAR EL PAGO:");
+            System.out.println("════════════════════════════════════════════════");
+            System.out.println("1. Abre la URL de checkout en tu navegador");
+            System.out.println("2. MercadoPago te pedirá iniciar sesión con un usuario de prueba");
+            System.out.println("");
+            System.out.println("🔐 CREDENCIALES DE PRUEBA (Comprador):");
+            System.out.println("   Usuario: TESTUSER7191328507680256966");
+            System.out.println("   Contraseña: p4mhJvbM7Z");
+            System.out.println("");
+            System.out.println("💳 TARJETAS DE PRUEBA:");
+            System.out.println("   • Aprobada: 5031 7557 3453 0604 | CVV: 123 | Venc: 11/25");
+            System.out.println("   • Rechazada: 5031 4332 1540 6351 | CVV: 123 | Venc: 11/25");
+            System.out.println("");
+            System.out.println("📚 Más tarjetas en: https://www.mercadopago.com.co/developers/es/docs/checkout-pro/additional-content/test-cards");
+            System.out.println("════════════════════════════════════════════════");
             System.out.println("=== CHECKOUT COMPLETADO ===");
             
             return ResponseEntity.ok(response);
@@ -165,20 +180,72 @@ public class PaymentController {
                 Map<String, Object> data = (Map<String, Object>) payload.get("data");
                 String paymentId = (String) data.get("id");
                 
-                // Aquí deberías consultar el pago en MercadoPago y actualizar el estado
-                System.out.println("Payment ID: " + paymentId);
+                System.out.println("Payment ID recibido: " + paymentId);
                 
-                // Por ahora solo confirmamos recepción
                 return ResponseEntity.ok(Map.of("message", "Webhook procesado"));
             }
 
             return ResponseEntity.ok(Map.of("message", "Evento no manejado"));
 
         } catch (Exception e) {
-            System.out.println("Error procesando webhook: " + e.getMessage());
+            System.err.println("❌ Error procesando webhook: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Error procesando webhook"));
+        }
+    }
+
+    @GetMapping("/status/{orderId}")
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    public ResponseEntity<?> checkPaymentStatus(@PathVariable Integer orderId, HttpServletRequest httpRequest) {
+        System.out.println("=== VERIFICANDO ESTADO DE PAGO ===");
+        System.out.println("Order ID: " + orderId);
+        
+        try {
+            Object o = httpRequest.getAttribute("authenticatedUser");
+            if (!(o instanceof UserEntity)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "No autorizado"));
+            }
+            UserEntity user = (UserEntity) o;
+            
+            Order order = orderService.getOrderById(orderId);
+            
+            // Verificar propiedad (permitir a admins ver cualquier orden)
+            boolean isAdmin = user.getRoles() != null && 
+                             user.getRoles().stream().anyMatch(r -> r.name().equals("ROLE_ADMIN"));
+            
+            if (order.getUser() == null || 
+                (!isAdmin && order.getUser().getId() != user.getId())) {
+                System.out.println("❌ Usuario sin permisos para ver orden " + orderId);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "No tienes permiso para ver este pedido"));
+            }
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("orderId", order.getId());
+            response.put("status", order.getStatus());
+            response.put("subtotal", order.getSubtotal());
+            response.put("tax", order.getTax());
+            response.put("total", order.getTotal());
+            response.put("preferenceId", order.getMercadopagoPreferenceId());
+            response.put("paymentId", order.getMercadopagoPaymentId());
+            response.put("createdAt", order.getCreatedAt());
+            response.put("updatedAt", order.getUpdatedAt());
+            
+            System.out.println("✅ Estado de orden " + orderId + ": " + order.getStatus());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (RuntimeException e) {
+            System.err.println("❌ Orden no encontrada: " + orderId);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", "Pedido no encontrado"));
+        } catch (Exception e) {
+            System.err.println("❌ Error verificando estado: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error al verificar estado del pago"));
         }
     }
 }

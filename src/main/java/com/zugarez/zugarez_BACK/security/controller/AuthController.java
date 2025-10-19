@@ -140,13 +140,21 @@ public class AuthController {
         }
         
         UserEntity user = userOpt.get();
+        
+        // BLOQUEAR usuarios desactivados antes de validar password
+        if (user.getDeactivatedAt() != null) {
+            logger.warn("Usuario desactivado intentando login: {}", user.getUsername());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new MessageDto(HttpStatus.FORBIDDEN, "Tu cuenta ha sido desactivada. Contacta soporte para reactivarla."));
+        }
+        
         if (!userEntityService.checkPassword(user, dto.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new MessageDto(HttpStatus.UNAUTHORIZED, "Usuario o contraseña incorrectos"));
         }
         
         Random random = new Random();
-        int code = random.nextInt(90) + 10;
+        int code = 100000 + random.nextInt(900000); // Código de 6 dígitos (100000-999999)
         String codeStr = String.valueOf(code);
         LocalDateTime expiry = LocalDateTime.now().plusMinutes(5);
         
@@ -154,7 +162,7 @@ public class AuthController {
         user.setLoginCodeExpiry(expiry);
         userEntityRepository.save(user);
         
-        logger.info("Código generado para {}: {}", user.getUsername(), codeStr);
+        logger.info("Código de 6 dígitos generado para {}: {}", user.getUsername(), codeStr);
         
         emailService.sendLoginCodeEmail(user.getEmail(), code);
         

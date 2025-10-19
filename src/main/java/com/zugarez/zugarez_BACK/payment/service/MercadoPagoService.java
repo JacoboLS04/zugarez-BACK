@@ -33,12 +33,16 @@ public class MercadoPagoService {
             MercadoPagoConfig.setAccessToken(accessToken);
             System.out.println("✅ MercadoPago configurado correctamente");
             System.out.println("Access Token: " + accessToken.substring(0, Math.min(20, accessToken.length())) + "...");
+            System.out.println("Cuenta: Zugarez (Colombia)");
         }
         
         if (publicKey == null || publicKey.isEmpty() || publicKey.equals("TEST-YOUR_PUBLIC_KEY_HERE")) {
             System.err.println("⚠️ WARNING: MercadoPago Public Key no configurado. Configura MERCADOPAGO_PUBLIC_KEY en las variables de entorno.");
         } else {
             System.out.println("Public Key: " + publicKey.substring(0, Math.min(20, publicKey.length())) + "...");
+            System.out.println("");
+            System.out.println("🔐 Usuario de prueba configurado: TESTUSER7191328507680256966");
+            System.out.println("📧 Para pruebas, usa este usuario al pagar en MercadoPago");
         }
     }
 
