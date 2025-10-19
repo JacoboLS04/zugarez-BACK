@@ -62,15 +62,29 @@ public class PaymentController {
             
             System.out.println("=== ORDEN CREADA ===");
             System.out.println("Order ID: " + order.getId());
+            System.out.println("Subtotal: " + order.getSubtotal());
+            System.out.println("Tax: " + order.getTax());
             System.out.println("Total: " + order.getTotal());
             System.out.println("Preference ID: " + order.getMercadopagoPreferenceId());
+
+            // ✅ Construir URL de sandbox directamente
+            String sandboxUrl = "https://sandbox.mercadopago.com.co/checkout/v1/redirect?pref_id=" 
+                + order.getMercadopagoPreferenceId();
 
             Map<String, Object> response = new HashMap<>();
             response.put("orderId", order.getId());
             response.put("preferenceId", order.getMercadopagoPreferenceId());
+            response.put("subtotal", order.getSubtotal());
+            response.put("tax", order.getTax());
             response.put("total", order.getTotal());
             response.put("publicKey", mercadoPagoService.getPublicKey());
+            response.put("sandboxUrl", sandboxUrl);
+            response.put("checkoutUrl", sandboxUrl);
 
+            System.out.println("Sandbox URL: " + sandboxUrl);
+            System.out.println("⚠️ IMPORTANTE: Debes estar logueado con el usuario de prueba en MercadoPago");
+            System.out.println("=== CHECKOUT COMPLETADO ===");
+            
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {

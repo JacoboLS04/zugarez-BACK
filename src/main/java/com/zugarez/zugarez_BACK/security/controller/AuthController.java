@@ -1,4 +1,5 @@
 package com.zugarez.zugarez_BACK.security.controller;
+
 import com.zugarez.zugarez_BACK.global.dto.MessageDto;
 import com.zugarez.zugarez_BACK.global.exceptions.AttributeException;
 import com.zugarez.zugarez_BACK.global.service.TemplateService;
@@ -8,12 +9,14 @@ import com.zugarez.zugarez_BACK.security.dto.LoginUserDto;
 import com.zugarez.zugarez_BACK.security.entity.UserEntity;
 import com.zugarez.zugarez_BACK.security.service.UserEntityService;
 import com.zugarez.zugarez_BACK.security.repository.UserEntityRepository;
-import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.Optional;
 import java.time.LocalDateTime;
 import java.util.Random;
@@ -28,6 +31,9 @@ import java.util.HashMap;
 @RequestMapping("/auth")
 @CrossOrigin(origins = "*", maxAge = 3600)
 public class AuthController {
+    
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+    
     @Autowired
     UserEntityService userEntityService;
     @Autowired
@@ -44,9 +50,7 @@ public class AuthController {
      */
     @PostMapping("/verify-code")
     public ResponseEntity<?> verifyCode(@Valid @RequestBody com.zugarez.zugarez_BACK.security.dto.VerificationCodeDto dto) {
-        System.out.println("=== MÉTODO /verify-code EJECUTÁNDOSE ===");
-        System.out.println("Email recibido: " + dto.getEmail());
-        System.out.println("Code recibido: " + dto.getCode());
+        logger.info("Verificando código para email/username: {}", dto.getEmail());
         
         Optional<UserEntity> userOpt = Optional.empty();
         
@@ -64,14 +68,9 @@ public class AuthController {
         
         UserEntity user = userOpt.get();
         
-        System.out.println("=== VERIFICANDO ESTADO DEL USUARIO ===");
-        System.out.println("Usuario ID: " + user.getId());
-        System.out.println("DeactivatedAt: " + user.getDeactivatedAt());
-        System.out.println("Verified: " + user.isVerified());
-        
-        // BLOQUEAR usuarios desactivados (baja voluntaria)
+        // BLOQUEAR usuarios desactivados
         if (user.getDeactivatedAt() != null) {
-            System.out.println("ERROR: Usuario desactivado, bloqueando login");
+            logger.warn("Usuario desactivado intentando login: {}", user.getUsername());
             Map<String,Object> body = new HashMap<>();
             body.put("error", "Tu cuenta ha sido desactivada");
             body.put("message", "Tu solicitud de baja fue procesada. Contacta soporte si deseas reactivar tu cuenta.");
@@ -79,19 +78,18 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
         }
         
-        // Verificar código de login
+        // Verificar código
         if (user.getLoginCode() == null || !user.getLoginCode().equals(dto.getCode())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new MessageDto(HttpStatus.UNAUTHORIZED, "Código incorrecto"));
         }
         
-        // Verificar expiración
         if (user.getLoginCodeExpiry() == null || LocalDateTime.now().isAfter(user.getLoginCodeExpiry())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new MessageDto(HttpStatus.UNAUTHORIZED, "Código expirado"));
         }
         
-        // Código válido, limpiar y generar JWT
+        // Limpiar código y generar JWT
         user.setLoginCode(null);
         user.setLoginCodeExpiry(null);
         userEntityRepository.save(user);
@@ -127,8 +125,7 @@ public class AuthController {
     // Paso 1: Login con envío de código
     @PostMapping("/login/init")
     public ResponseEntity<MessageDto> loginInit(@Valid @RequestBody LoginUserDto dto) {
-        System.out.println("=== LOGIN INIT ===");
-        System.out.println("Email/Username recibido: " + dto.getEmail());
+        logger.info("Iniciando login para: {}", dto.getEmail());
         
         Optional<UserEntity> userOpt = Optional.empty();
         if (dto.getEmail() != null && !dto.getEmail().isEmpty()) {
@@ -148,23 +145,17 @@ public class AuthController {
                     .body(new MessageDto(HttpStatus.UNAUTHORIZED, "Usuario o contraseña incorrectos"));
         }
         
-        // Generar código de 2 dígitos (10-99)
         Random random = new Random();
         int code = random.nextInt(90) + 10;
         String codeStr = String.valueOf(code);
-        
-        // Establecer expiración a 5 minutos
         LocalDateTime expiry = LocalDateTime.now().plusMinutes(5);
         
-        // Guardar código en la base de datos
         user.setLoginCode(codeStr);
         user.setLoginCodeExpiry(expiry);
         userEntityRepository.save(user);
         
-        System.out.println("Código generado: " + codeStr);
-        System.out.println("Expira en: " + expiry);
+        logger.info("Código generado para {}: {}", user.getUsername(), codeStr);
         
-        // Enviar email
         emailService.sendLoginCodeEmail(user.getEmail(), code);
         
         return ResponseEntity.ok(new MessageDto(HttpStatus.OK, "Código enviado al correo"));

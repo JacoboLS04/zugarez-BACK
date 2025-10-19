@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -33,7 +32,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
     /**
      * Filters incoming HTTP requests for JWT authentication.
-     * Skips Actuator endpoints.
+     * Skips Actuator and public endpoints.
      * @param req the HTTP request
      * @param res the HTTP response
      * @param chain the filter chain
@@ -42,49 +41,38 @@ public class JwtFilter extends OncePerRequestFilter {
      */
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain) throws ServletException, IOException {
-        // Omitir autenticación JWT para endpoints de Actuator
         String requestPath = req.getServletPath();
-        if (requestPath.startsWith("/actuator/")) {
-            System.out.println("=== JWT FILTER ===");
-            System.out.println("Omitiendo JWT Filter para Actuator endpoint: " + req.getRequestURL());
+        
+        // Omitir autenticación JWT para endpoints públicos
+        if (requestPath.startsWith("/actuator/") || requestPath.startsWith("/auth/")) {
             chain.doFilter(req, res);
             return;
         }
 
         String token = getToken(req);
-        System.out.println("=== JWT FILTER ===");
-        System.out.println("Request URL: " + req.getRequestURL());
-        System.out.println("Authorization Header: " + req.getHeader("Authorization"));
-        System.out.println("Token extraído: " + (token != null ? token.substring(0, Math.min(20, token.length())) + "..." : "null"));
         
         try {
             if (token != null && jwtProvider.validateToken(token)) {
-                System.out.println("Token válido, obteniendo username...");
                 String username = jwtProvider.getUsernameFromToken(token);
-                System.out.println("Username del token: " + username);
-                
                 UserDetails userDetails = userDetailsServiceImpl.loadUserByUsername(username);
-                System.out.println("UserDetails cargado: " + userDetails.getUsername());
                 
                 UsernamePasswordAuthenticationToken authenticationToken =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                System.out.println("Autenticación establecida correctamente");
-            } else {
-                System.out.println("Token nulo o inválido");
+                
+                logger.debug("Autenticación establecida para: {}", username);
             }
-        } catch (UsernameNotFoundException e) {
-            System.out.println("Usuario no encontrado: " + e.getMessage());
         } catch (Exception e) {
-            System.out.println("Error en JWT Filter: " + e.getMessage());
+            logger.error("Error en JWT Filter: {}", e.getMessage());
         }
+        
         chain.doFilter(req, res);
     }
 
     private String getToken(HttpServletRequest request) {
         String header = request.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer "))
-            return header.replace("Bearer ", "");
+            return header.substring(7);
         return null;
     }
 }

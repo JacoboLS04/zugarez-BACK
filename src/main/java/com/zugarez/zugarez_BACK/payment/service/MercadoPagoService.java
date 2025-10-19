@@ -42,31 +42,60 @@ public class MercadoPagoService {
     }
 
     public Preference createPreference(Order order) {
-        if (accessToken == null || accessToken.isEmpty() || accessToken.equals("TEST-YOUR_ACCESS_TOKEN_HERE")) {
-            throw new RuntimeException("MercadoPago no está configurado. Configura las credenciales en las variables de entorno.");
+        System.out.println("=== CREANDO PREFERENCIA MERCADOPAGO ===");
+        System.out.println("Order ID: " + order.getId());
+        System.out.println("Subtotal: " + order.getSubtotal());
+        System.out.println("Tax: " + order.getTax());
+        System.out.println("Total: " + order.getTotal());
+        System.out.println("Items: " + order.getItems().size());
+        
+        if (accessToken == null || accessToken.isEmpty()) {
+            throw new RuntimeException("MercadoPago no está configurado. Verifica las variables de entorno.");
         }
         
         try {
             List<PreferenceItemRequest> items = new ArrayList<>();
             
+            // Agregar productos
             for (OrderItem item : order.getItems()) {
-                // Validar que el producto y sus datos existan
                 if (item.getProduct() == null) {
                     throw new RuntimeException("Item sin producto asociado");
                 }
                 
+                System.out.println("Agregando item: " + item.getProduct().getName() + 
+                    " | Cantidad: " + item.getQuantity() + 
+                    " | Precio unitario: " + item.getPrice() +
+                    " | Subtotal: " + item.getSubtotal());
+                
                 PreferenceItemRequest itemRequest = PreferenceItemRequest.builder()
-                    .id(String.valueOf(item.getProduct().getId())) // ✅ Convertir Integer a String
-                    .title(item.getProduct().getName() != null ? item.getProduct().getName() : "Producto sin nombre")
-                    .description(item.getProduct().getDescription() != null ? item.getProduct().getDescription() : "Sin descripción")
+                    .id(String.valueOf(item.getProduct().getId()))
+                    .title(item.getProduct().getName() != null ? item.getProduct().getName() : "Producto")
+                    .description(item.getProduct().getDescription() != null ? item.getProduct().getDescription() : "")
                     .pictureUrl(item.getProduct().getUrlImage())
-                    .categoryId("others") // Categoría genérica
+                    .categoryId("others")
                     .quantity(item.getQuantity())
-                    .currencyId("COP") // Peso colombiano
-                    .unitPrice(item.getPrice()) // Ya es BigDecimal, MercadoPago lo acepta
+                    .currencyId("COP")
+                    .unitPrice(item.getPrice())
                     .build();
                 
                 items.add(itemRequest);
+            }
+
+            // ✅ Agregar el impuesto como un item separado
+            if (order.getTax().compareTo(BigDecimal.ZERO) > 0) {
+                System.out.println("Agregando impuesto como item: " + order.getTax());
+                
+                PreferenceItemRequest taxItem = PreferenceItemRequest.builder()
+                    .id("tax")
+                    .title("Impuesto (5%)")
+                    .description("Impuesto sobre la venta")
+                    .categoryId("others")
+                    .quantity(1)
+                    .currencyId("COP")
+                    .unitPrice(order.getTax())
+                    .build();
+                
+                items.add(taxItem);
             }
 
             PreferenceBackUrlsRequest backUrls = PreferenceBackUrlsRequest.builder()
@@ -83,15 +112,22 @@ public class MercadoPagoService {
                 .statementDescriptor("ZUGAREZ")
                 .build();
 
+            System.out.println("Creando preferencia con MercadoPago...");
+            System.out.println("Total de items enviados a MP: " + items.size());
+            
             PreferenceClient client = new PreferenceClient();
             Preference preference = client.create(preferenceRequest);
             
-            System.out.println("✅ Preferencia de MercadoPago creada: " + preference.getId());
+            System.out.println("✅ Preferencia creada exitosamente");
+            System.out.println("Preference ID: " + preference.getId());
+            System.out.println("Sandbox Init Point: " + preference.getSandboxInitPoint());
             
             return preference;
             
         } catch (Exception e) {
-            System.err.println("❌ Error creando preferencia de MercadoPago: " + e.getMessage());
+            System.err.println("❌ ERROR CRÍTICO creando preferencia de MercadoPago");
+            System.err.println("Mensaje: " + e.getMessage());
+            System.err.println("Tipo: " + e.getClass().getName());
             e.printStackTrace();
             throw new RuntimeException("Error al crear preferencia de pago: " + e.getMessage(), e);
         }

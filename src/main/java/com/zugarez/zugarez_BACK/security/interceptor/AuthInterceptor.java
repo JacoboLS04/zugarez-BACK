@@ -5,10 +5,13 @@ import com.zugarez.zugarez_BACK.security.jwt.JwtProvider;
 import com.zugarez.zugarez_BACK.security.repository.UserEntityRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import java.io.IOException;
 import java.util.Optional;
 
 /**
@@ -18,6 +21,8 @@ import java.util.Optional;
 @Component
 public class AuthInterceptor implements HandlerInterceptor {
 
+    private static final Logger logger = LoggerFactory.getLogger(AuthInterceptor.class);
+
     @Autowired
     private JwtProvider jwtProvider;
 
@@ -25,44 +30,71 @@ public class AuthInterceptor implements HandlerInterceptor {
     private UserEntityRepository userRepository;
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        System.out.println("=== AUTH INTERCEPTOR ===");
-        System.out.println("Request URL: " + request.getRequestURL());
-        System.out.println("Method: " + request.getMethod());
-        
-        String token = getTokenFromRequest(request);
-        System.out.println("Token extraído: " + (token != null ? "Presente (longitud: " + token.length() + ")" : "Ausente"));
-        
-        if (token != null && jwtProvider.validateToken(token)) {
-            System.out.println("✅ Token válido");
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        try {
+            logger.info("=== AUTH INTERCEPTOR ===");
+            logger.info("Request URL: {} | Method: {}", request.getRequestURL(), request.getMethod());
+            
+            String token = getTokenFromRequest(request);
+            
+            if (token == null) {
+                logger.warn("Token ausente en la petición");
+                return true; // Dejar pasar, Spring Security se encargará
+            }
+            
+            logger.debug("Token extraído (longitud: {})", token.length());
+            
+            if (!jwtProvider.validateToken(token)) {
+                logger.error("Token inválido o expirado");
+                sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Token inválido o expirado");
+                return false;
+            }
+            
+            logger.info("Token válido");
             String username = jwtProvider.getUsernameFromToken(token);
-            System.out.println("Username del token: " + username);
+            
+            if (username == null || username.trim().isEmpty()) {
+                logger.error("Username extraído del token es nulo o vacío");
+                sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Token inválido");
+                return false;
+            }
+            
+            logger.info("Username del token: {}", username);
             
             Optional<UserEntity> userOpt = userRepository.findByUsername(username);
             
-            if (userOpt.isPresent()) {
-                UserEntity user = userOpt.get();
-                System.out.println("✅ Usuario encontrado: " + user.getUsername() + " (ID: " + user.getId() + ")");
-                
-                if (user.getDeactivatedAt() != null) {
-                    System.err.println("❌ Usuario desactivado - Bloqueando acceso");
-                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                    response.setContentType("application/json");
-                    response.getWriter().write("{\"error\":\"Tu cuenta ha sido desactivada\",\"deactivatedAt\":\"" + user.getDeactivatedAt() + "\"}");
-                    return false;
-                }
-                
-                // ✅ IMPORTANTE: Agregar el usuario al request
-                request.setAttribute("authenticatedUser", user);
-                System.out.println("✅ Usuario agregado al request como 'authenticatedUser'");
-            } else {
-                System.err.println("❌ Usuario no encontrado en BD: " + username);
+            if (!userOpt.isPresent()) {
+                logger.warn("Usuario no encontrado en BD: {} - Dejando pasar para que Spring Security maneje", username);
+                return true; // Dejar que Spring Security maneje este caso
             }
-        } else {
-            System.err.println("❌ Token inválido o ausente");
+            
+            UserEntity user = userOpt.get();
+            logger.info("Usuario encontrado: {} (ID: {})", user.getUsername(), user.getId());
+            
+            // Solo bloquear si el usuario está desactivado
+            if (user.getDeactivatedAt() != null) {
+                logger.warn("Usuario desactivado - Bloqueando acceso: {}", username);
+                sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, 
+                    String.format("{\"error\":\"Tu cuenta ha sido desactivada\",\"deactivatedAt\":\"%s\"}", 
+                    user.getDeactivatedAt()));
+                return false;
+            }
+            
+            // Agregar el usuario al request para uso en controladores
+            request.setAttribute("authenticatedUser", user);
+            logger.info("Usuario autenticado correctamente y agregado al request");
+            
+            return true;
+            
+        } catch (Exception e) {
+            logger.error("Error en AuthInterceptor: {}", e.getMessage(), e);
+            try {
+                sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error interno de autenticación");
+            } catch (IOException ioException) {
+                logger.error("Error al enviar respuesta de error: {}", ioException.getMessage());
+            }
+            return false;
         }
-        
-        return true;
     }
 
     private String getTokenFromRequest(HttpServletRequest request) {
@@ -71,5 +103,20 @@ public class AuthInterceptor implements HandlerInterceptor {
             return bearerToken.substring(7);
         }
         return null;
+    }
+    
+    private void sendErrorResponse(HttpServletResponse response, int status, String message) throws IOException {
+        if (response.isCommitted()) {
+            logger.warn("Response ya fue enviada, no se puede modificar");
+            return;
+        }
+        response.setStatus(status);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        
+        // Escapar comillas en el mensaje si es necesario
+        String jsonMessage = message.startsWith("{") ? message : "{\"error\":\"" + message.replace("\"", "\\\"") + "\"}";
+        response.getWriter().write(jsonMessage);
+        response.getWriter().flush();
     }
 }
