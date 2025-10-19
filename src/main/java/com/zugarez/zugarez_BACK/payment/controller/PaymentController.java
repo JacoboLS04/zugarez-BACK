@@ -144,10 +144,8 @@ public class PaymentController {
         System.out.println("Payment ID: " + paymentId);
         System.out.println("Status: " + status);
         System.out.println("Preference ID: " + preferenceId);
-        System.out.println("External Reference: " + externalReference);
         
         try {
-            // Determinar el estado correcto
             OrderStatus newStatus;
             if ("approved".equals(status) || "approved".equals(collectionStatus)) {
                 newStatus = OrderStatus.APPROVED;
@@ -160,13 +158,12 @@ public class PaymentController {
                 System.out.println("❌ Pago FALLIDO");
             }
             
-            // ✅ ACTUALIZAR LA BASE DE DATOS PRIMERO
             Order order = orderService.updateOrderStatus(preferenceId, newStatus, paymentId);
             System.out.println("✅ Orden actualizada en BD: ID=" + order.getId() + ", Estado=" + order.getStatus());
             
-            // ✅ LUEGO redirigir al frontend
+            // ✅ Redirigir a la sección de COMPRAS/PRODUCTOS del frontend
             String redirectUrl = String.format(
-                "https://zugarez.vercel.app/?paymentSuccess=true&orderId=%d&status=%s&total=%s",
+                "https://zugarez.vercel.app/products?paymentSuccess=true&orderId=%d&status=%s&total=%s",
                 order.getId(),
                 newStatus.toString(),
                 order.getTotal()
@@ -176,9 +173,9 @@ public class PaymentController {
             response.sendRedirect(redirectUrl);
             
         } catch (Exception e) {
-            System.err.println("❌ Error procesando pago exitoso: " + e.getMessage());
+            System.err.println("❌ Error: " + e.getMessage());
             e.printStackTrace();
-            response.sendRedirect("https://zugarez.vercel.app/?paymentError=true");
+            response.sendRedirect("https://zugarez.vercel.app/products?paymentError=true");
         }
     }
 
@@ -193,14 +190,13 @@ public class PaymentController {
         try {
             if (preferenceId != null) {
                 Order order = orderService.updateOrderStatus(preferenceId, OrderStatus.FAILED, null);
-                System.out.println("❌ Orden marcada como FALLIDA: " + order.getId());
+                System.out.println("❌ Orden FALLIDA: " + order.getId());
             }
             
-            response.sendRedirect("https://zugarez.vercel.app/?paymentFailed=true");
+            response.sendRedirect("https://zugarez.vercel.app/products?paymentFailed=true");
             
         } catch (Exception e) {
-            System.err.println("❌ Error: " + e.getMessage());
-            response.sendRedirect("https://zugarez.vercel.app/?paymentError=true");
+            response.sendRedirect("https://zugarez.vercel.app/products?paymentError=true");
         }
     }
 
@@ -215,14 +211,13 @@ public class PaymentController {
         try {
             if (preferenceId != null) {
                 Order order = orderService.updateOrderStatus(preferenceId, OrderStatus.PENDING, null);
-                System.out.println("⏳ Orden marcada como PENDIENTE: " + order.getId());
+                System.out.println("⏳ Orden PENDIENTE: " + order.getId());
             }
             
-            response.sendRedirect("https://zugarez.vercel.app/?paymentPending=true");
+            response.sendRedirect("https://zugarez.vercel.app/products?paymentPending=true");
             
         } catch (Exception e) {
-            System.err.println("❌ Error: " + e.getMessage());
-            response.sendRedirect("https://zugarez.vercel.app/?paymentError=true");
+            response.sendRedirect("https://zugarez.vercel.app/products?paymentError=true");
         }
     }
 

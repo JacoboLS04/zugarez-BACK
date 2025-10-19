@@ -104,6 +104,7 @@ public class MercadoPagoService {
                 items.add(taxItem);
             }
 
+            // ✅ Cambiar las back_urls para que apunten al BACKEND en Koyeb
             PreferenceBackUrlsRequest backUrls = PreferenceBackUrlsRequest.builder()
                 .success("https://better-billi-zugarez-sys-ed7b78de.koyeb.app/payment/success")
                 .failure("https://better-billi-zugarez-sys-ed7b78de.koyeb.app/payment/failure")
