@@ -35,7 +35,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         Optional<UserEntity> userEntity = userEntityRepository.findByUsername(username);
         
         if(!userEntity.isPresent()) {
-            System.out.println("Usuario no encontrado en BD");
+            System.err.println("❌ Usuario no encontrado en BD: " + username);
             throw new UsernameNotFoundException("Usuario no encontrado");
         }
 
@@ -43,12 +43,13 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         
         // Bloquear usuarios desactivados (baja voluntaria)
         if (user.getDeactivatedAt() != null) {
-            System.out.println("❌ Usuario desactivado - Fecha: " + user.getDeactivatedAt());
+            System.err.println("❌ Usuario desactivado - Username: " + username + " - Fecha: " + user.getDeactivatedAt());
             throw new UsernameNotFoundException("Usuario desactivado");
         }
         
-        System.out.println("✅ Usuario cargado - ID: " + user.getId() + ", Username: " + user.getUsername());
+        System.out.println("✅ Usuario cargado - ID: " + user.getId() + ", Username: " + user.getUsername() + ", Email: " + user.getEmail());
         System.out.println("Roles: " + user.getRoles());
+        System.out.println("Verified: " + user.isVerified());
 
         return UserPrincipal.build(user);
     }
