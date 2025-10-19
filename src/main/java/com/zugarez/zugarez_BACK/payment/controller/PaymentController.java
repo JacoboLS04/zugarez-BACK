@@ -141,33 +141,44 @@ public class PaymentController {
             HttpServletResponse response) throws IOException {
         
         System.out.println("=== PAGO EXITOSO - CALLBACK RECIBIDO ===");
+        System.out.println("Payment ID: " + paymentId);
+        System.out.println("Status: " + status);
+        System.out.println("Preference ID: " + preferenceId);
+        System.out.println("External Reference: " + externalReference);
         
         try {
+            // Determinar el estado correcto
             OrderStatus newStatus;
             if ("approved".equals(status) || "approved".equals(collectionStatus)) {
                 newStatus = OrderStatus.APPROVED;
+                System.out.println("✅ Pago APROBADO");
             } else if ("pending".equals(status)) {
                 newStatus = OrderStatus.PENDING;
+                System.out.println("⏳ Pago PENDIENTE");
             } else {
                 newStatus = OrderStatus.FAILED;
+                System.out.println("❌ Pago FALLIDO");
             }
             
+            // ✅ ACTUALIZAR LA BASE DE DATOS PRIMERO
             Order order = orderService.updateOrderStatus(preferenceId, newStatus, paymentId);
-            System.out.println("✅ Orden actualizada: " + order.getId());
+            System.out.println("✅ Orden actualizada en BD: ID=" + order.getId() + ", Estado=" + order.getStatus());
             
+            // ✅ LUEGO redirigir al frontend
             String redirectUrl = String.format(
-                "https://zugarez.vercel.app/payment/success?orderId=%d&status=%s&paymentId=%s&total=%s",
+                "https://zugarez.vercel.app/?paymentSuccess=true&orderId=%d&status=%s&total=%s",
                 order.getId(),
                 newStatus.toString(),
-                paymentId,
                 order.getTotal()
             );
             
+            System.out.println("🔄 Redirigiendo a: " + redirectUrl);
             response.sendRedirect(redirectUrl);
             
         } catch (Exception e) {
-            System.err.println("❌ Error: " + e.getMessage());
-            response.sendRedirect("https://zugarez.vercel.app/payment/error");
+            System.err.println("❌ Error procesando pago exitoso: " + e.getMessage());
+            e.printStackTrace();
+            response.sendRedirect("https://zugarez.vercel.app/?paymentError=true");
         }
     }
 
@@ -182,18 +193,14 @@ public class PaymentController {
         try {
             if (preferenceId != null) {
                 Order order = orderService.updateOrderStatus(preferenceId, OrderStatus.FAILED, null);
-                
-                String redirectUrl = String.format(
-                    "https://zugarez.vercel.app/payment/failure?orderId=%d",
-                    order.getId()
-                );
-                response.sendRedirect(redirectUrl);
-            } else {
-                response.sendRedirect("https://zugarez.vercel.app/payment/failure");
+                System.out.println("❌ Orden marcada como FALLIDA: " + order.getId());
             }
             
+            response.sendRedirect("https://zugarez.vercel.app/?paymentFailed=true");
+            
         } catch (Exception e) {
-            response.sendRedirect("https://zugarez.vercel.app/payment/error");
+            System.err.println("❌ Error: " + e.getMessage());
+            response.sendRedirect("https://zugarez.vercel.app/?paymentError=true");
         }
     }
 
@@ -208,18 +215,14 @@ public class PaymentController {
         try {
             if (preferenceId != null) {
                 Order order = orderService.updateOrderStatus(preferenceId, OrderStatus.PENDING, null);
-                
-                String redirectUrl = String.format(
-                    "https://zugarez.vercel.app/payment/pending?orderId=%d",
-                    order.getId()
-                );
-                response.sendRedirect(redirectUrl);
-            } else {
-                response.sendRedirect("https://zugarez.vercel.app/payment/pending");
+                System.out.println("⏳ Orden marcada como PENDIENTE: " + order.getId());
             }
             
+            response.sendRedirect("https://zugarez.vercel.app/?paymentPending=true");
+            
         } catch (Exception e) {
-            response.sendRedirect("https://zugarez.vercel.app/payment/error");
+            System.err.println("❌ Error: " + e.getMessage());
+            response.sendRedirect("https://zugarez.vercel.app/?paymentError=true");
         }
     }
 
