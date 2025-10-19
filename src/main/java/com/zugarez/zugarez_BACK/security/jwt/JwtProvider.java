@@ -15,6 +15,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,7 +27,7 @@ import java.util.stream.Collectors;
 @Component
 public class JwtProvider {
 
-    // use this class for logger to avoid accidental reference to another class
+    // Use this class for the logger to avoid accidental wrong-class references
     private static final Logger logger = LoggerFactory.getLogger(JwtProvider.class);
 
     @Value("${jwt.secret}")
@@ -46,7 +47,7 @@ public class JwtProvider {
         return Jwts.builder()
                 .signWith(getKey(secret))
                 .setSubject(userPrincipal.getUsername())
-                .claim("userId", userPrincipal.getId()) // <-- agrega claim userId
+                .claim("userId", userPrincipal.getUsername()) // use username because UserPrincipal#getId() is not available
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(new Date().getTime() + expiration * 1000))
                 .claim("roles", getRoles(userPrincipal))
@@ -130,18 +131,17 @@ public class JwtProvider {
     }
 
     private Key getKey(String secret) {
-        if (secret == null) {
-            logger.error("JWT secret is null");
+        if (secret == null || secret.isBlank()) {
+            logger.error("JWT secret is not configured or empty");
             throw new IllegalStateException("JWT secret not configured");
         }
         try {
-            // Prefer base64-decoded secret (common with jjwt examples)
             byte[] secretBytes = Decoders.BASE64.decode(secret);
             return Keys.hmacShaKeyFor(secretBytes);
         } catch (IllegalArgumentException ex) {
-            // Fallback: maybe secret is raw bytes (not base64) -> use UTF-8 bytes
-            logger.warn("JWT secret is not valid base64, falling back to raw bytes: {}", ex.getMessage());
-            byte[] raw = secret.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            // secret was not valid base64 — fallback to raw UTF-8 bytes
+            logger.warn("JWT secret is not valid Base64, falling back to raw UTF-8 bytes: {}", ex.getMessage());
+            byte[] raw = secret.getBytes(StandardCharsets.UTF_8);
             return Keys.hmacShaKeyFor(raw);
         }
     }
