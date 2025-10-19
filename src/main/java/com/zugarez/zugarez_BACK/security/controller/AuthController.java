@@ -45,7 +45,6 @@ public class AuthController {
     @PostMapping("/verify-code")
     public ResponseEntity<?> verifyCode(@Valid @RequestBody com.zugarez.zugarez_BACK.security.dto.VerificationCodeDto dto) {
         System.out.println("=== MÉTODO /verify-code EJECUTÁNDOSE ===");
-        System.out.println("*** ESTE ES EL MÉTODO /verify-code ***");
         System.out.println("Email recibido: " + dto.getEmail());
         System.out.println("Code recibido: " + dto.getCode());
         
@@ -54,55 +53,20 @@ public class AuthController {
         if (dto.getEmail() != null && !dto.getEmail().isEmpty()) {
             System.out.println("Buscando usuario por email: " + dto.getEmail());
             userOpt = userEntityRepository.findByEmail(dto.getEmail());
-            System.out.println("Usuario encontrado por email: " + userOpt.isPresent());
         }
         if (userOpt.isEmpty() && dto.getUsername() != null && !dto.getUsername().isEmpty()) {
-            System.out.println("Buscando usuario por username: " + dto.getUsername());
             userOpt = userEntityRepository.findByUsername(dto.getUsername());
-            System.out.println("Usuario encontrado por username: " + userOpt.isPresent());
         }
         
         if (userOpt.isEmpty()) {
-            System.out.println("ERROR: Usuario no encontrado!");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new MessageDto(HttpStatus.UNAUTHORIZED, "Usuario no encontrado"));
         }
         
         UserEntity user = userOpt.get();
-        System.out.println("Usuario encontrado - ID: " + user.getId() + ", Email: " + user.getEmail());
-        System.out.println("Código almacenado en BD: '" + user.getLoginCode() + "'");
-        System.out.println("Código recibido: '" + dto.getCode() + "'");
-        System.out.println("Longitud código BD: " + (user.getLoginCode() != null ? user.getLoginCode().length() : "null"));
-        System.out.println("Longitud código recibido: " + (dto.getCode() != null ? dto.getCode().length() : "null"));
-        System.out.println("¿Son iguales? " + (user.getLoginCode() != null && user.getLoginCode().equals(dto.getCode())));
-        System.out.println("Expiración: " + user.getLoginCodeExpiry());
-        System.out.println("Tiempo actual: " + LocalDateTime.now());
-        System.out.println("¿Expiró? " + (user.getLoginCodeExpiry() != null && LocalDateTime.now().isAfter(user.getLoginCodeExpiry())));
         
-        // Verificar código de login
-        if (user.getLoginCode() == null || !user.getLoginCode().equals(dto.getCode())) {
-            System.out.println("ERROR: Código incorrecto o nulo!");
-            System.out.println("user.getLoginCode() == null: " + (user.getLoginCode() == null));
-            System.out.println("!user.getLoginCode().equals(dto.getCode()): " + (user.getLoginCode() != null && !user.getLoginCode().equals(dto.getCode())));
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new MessageDto(HttpStatus.UNAUTHORIZED, "Código incorrecto"));
-        }
-        
-        // Verificar expiración (5 minutos)
-        if (user.getLoginCodeExpiry() == null || LocalDateTime.now().isAfter(user.getLoginCodeExpiry())) {
-            System.out.println("ERROR: Código expirado!");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new MessageDto(HttpStatus.UNAUTHORIZED, "Código expirado"));
-        }
-        
-        System.out.println("Código válido, limpiando y generando JWT...");
-        // Código válido, limpiar y generar JWT
-        user.setLoginCode(null);
-        user.setLoginCodeExpiry(null);
-        userEntityRepository.save(user);
-        
-        // Bloquear emisión de token si el usuario fue desactivado (baja voluntaria)
-        if (!user.isVerified() && user.getDeactivatedAt() != null) {
+        // NUEVO: Bloquear usuarios desactivados ANTES de validar el código
+        if (user.getDeactivatedAt() != null) {
             Map<String,Object> body = new HashMap<>();
             body.put("error", "Tu cuenta ha sido desactivada");
             body.put("message", "Tu solicitud de baja fue procesada. Contacta soporte si deseas reactivar tu cuenta.");
@@ -110,13 +74,24 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
         }
         
-        JwtTokenDto jwtTokenDto = userEntityService.loginByUser(user);
-        System.out.println("=== JWT GENERADO ===");
-        System.out.println("Token: " + jwtTokenDto.getToken());
-        System.out.println("User ID: " + (jwtTokenDto.getUser() != null ? jwtTokenDto.getUser().getId() : "null"));
-        System.out.println("User Username: " + (jwtTokenDto.getUser() != null ? jwtTokenDto.getUser().getUsername() : "null"));
-        System.out.println("=== DEVOLVIENDO RESPUESTA 200 OK ===");
+        // Verificar código de login
+        if (user.getLoginCode() == null || !user.getLoginCode().equals(dto.getCode())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new MessageDto(HttpStatus.UNAUTHORIZED, "Código incorrecto"));
+        }
         
+        // Verificar expiración (5 minutos)
+        if (user.getLoginCodeExpiry() == null || LocalDateTime.now().isAfter(user.getLoginCodeExpiry())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new MessageDto(HttpStatus.UNAUTHORIZED, "Código expirado"));
+        }
+        
+        // Código válido, limpiar y generar JWT
+        user.setLoginCode(null);
+        user.setLoginCodeExpiry(null);
+        userEntityRepository.save(user);
+        
+        JwtTokenDto jwtTokenDto = userEntityService.loginByUser(user);
         return ResponseEntity.ok(jwtTokenDto);
     }
 

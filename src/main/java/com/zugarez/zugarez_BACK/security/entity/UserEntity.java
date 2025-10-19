@@ -45,7 +45,7 @@ public class UserEntity {
     private List<RoleEnum> roles;
 
     /** Motivo de desactivación (nullable) */
-    @Column(name = "deactivation_reason")
+    @Column(name = "deactivation_reason", length = 500)
     private String deactivationReason;
     /** Fecha/hora de desactivación (nullable) */
     @Column(name = "deactivated_at")
@@ -121,7 +121,6 @@ public class UserEntity {
     public void setLoginCodeExpiry(LocalDateTime loginCodeExpiry) {
         this.loginCodeExpiry = loginCodeExpiry;
     }
-
 
     public int getId() {
         return id;
