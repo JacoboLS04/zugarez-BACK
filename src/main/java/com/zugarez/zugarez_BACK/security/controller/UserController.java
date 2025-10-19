@@ -94,7 +94,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error","El usuario ya está dado de baja"));
         }
 
-        // ⚠️ IMPORTANTE: NO CAMBIAR 'verified' - solo establecer deactivatedAt
+        // IMPORTANTE: NO CAMBIAR 'verified' - solo establecer deactivatedAt
         LocalDateTime now = LocalDateTime.now();
         user.setDeactivationReason(reason);
         user.setDeactivatedAt(now);
@@ -122,7 +122,13 @@ public class UserController {
     @GetMapping("/admin/users/deactivated")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getDeactivatedUsers() {
-        List<UserEntity> deactivatedUsers = userRepository.findDeactivatedUsers();
+        System.out.println("=== ENDPOINT /admin/users/deactivated LLAMADO ===");
+        
+        List<UserEntity> deactivatedUsers = userRepository.findAll().stream()
+            .filter(u -> u.getDeactivatedAt() != null)
+            .collect(Collectors.toList());
+        
+        System.out.println("Usuarios desactivados encontrados: " + deactivatedUsers.size());
         
         List<Map<String, Object>> userList = deactivatedUsers.stream().map(user -> {
             Map<String, Object> userMap = new HashMap<>();
@@ -202,11 +208,8 @@ public class UserController {
             "username", savedUser.getUsername(),
             "email", savedUser.getEmail(),
             "reactivatedBy", admin.getUsername(),
-            "previousDeactivationReason", previousReason,
-            "previousDeactivatedAt", previousDeactivatedAt
-        ));
-    }
-}
+            "previousDeactivationReason", previousReason != null ? previousReason : "",
+            "previousDeactivatedAt", previousDeactivatedAt != null ? previousDeactivatedAt.toString() : ""
         ));
     }
 }
