@@ -140,28 +140,52 @@ public class PaymentController {
             @RequestParam(value = "preference_id", required = false) String preferenceId,
             HttpServletResponse response) throws IOException {
         
+        System.out.println("===========================================");
         System.out.println("=== PAGO EXITOSO - CALLBACK RECIBIDO ===");
-        System.out.println("Payment ID: " + paymentId);
-        System.out.println("Status: " + status);
-        System.out.println("Preference ID: " + preferenceId);
+        System.out.println("===========================================");
+        System.out.println("📋 Parámetros recibidos:");
+        System.out.println("  - Collection ID: " + collectionId);
+        System.out.println("  - Collection Status: " + collectionStatus);
+        System.out.println("  - Payment ID: " + paymentId);
+        System.out.println("  - Status: " + status);
+        System.out.println("  - External Reference: " + externalReference);
+        System.out.println("  - Preference ID: " + preferenceId);
+        System.out.println("===========================================");
         
         try {
+            // Validación de parámetros
+            if (preferenceId == null || preferenceId.isEmpty()) {
+                System.err.println("❌ ERROR: preferenceId es NULL o vacío");
+                throw new RuntimeException("preferenceId no proporcionado");
+            }
+            
+            System.out.println("✅ Step 1: Parámetros validados correctamente");
+            
+            // Determinar el estado correcto
             OrderStatus newStatus;
             if ("approved".equals(status) || "approved".equals(collectionStatus)) {
                 newStatus = OrderStatus.APPROVED;
-                System.out.println("✅ Pago APROBADO");
+                System.out.println("✅ Step 2: Estado determinado = APPROVED");
             } else if ("pending".equals(status)) {
                 newStatus = OrderStatus.PENDING;
-                System.out.println("⏳ Pago PENDIENTE");
+                System.out.println("⏳ Step 2: Estado determinado = PENDING");
             } else {
                 newStatus = OrderStatus.FAILED;
-                System.out.println("❌ Pago FALLIDO");
+                System.out.println("❌ Step 2: Estado determinado = FAILED");
             }
             
-            Order order = orderService.updateOrderStatus(preferenceId, newStatus, paymentId);
-            System.out.println("✅ Orden actualizada en BD: ID=" + order.getId() + ", Estado=" + order.getStatus());
+            System.out.println("🔄 Step 3: Intentando actualizar orden en BD...");
+            System.out.println("   - Buscando orden por preferenceId: " + preferenceId);
             
-            // ✅ Redirigir a la sección de COMPRAS/PRODUCTOS del frontend
+            // Actualizar orden
+            Order order = orderService.updateOrderStatus(preferenceId, newStatus, paymentId);
+            
+            System.out.println("✅ Step 4: Orden actualizada exitosamente");
+            System.out.println("   - Order ID: " + order.getId());
+            System.out.println("   - Nuevo Estado: " + order.getStatus());
+            System.out.println("   - Payment ID guardado: " + order.getMercadopagoPaymentId());
+            
+            // Construir URL de redirección
             String redirectUrl = String.format(
                 "https://zugarez.vercel.app/products?paymentSuccess=true&orderId=%d&status=%s&total=%s",
                 order.getId(),
@@ -169,13 +193,39 @@ public class PaymentController {
                 order.getTotal()
             );
             
-            System.out.println("🔄 Redirigiendo a: " + redirectUrl);
+            System.out.println("✅ Step 5: URL de redirección construida");
+            System.out.println("   - URL: " + redirectUrl);
+            System.out.println("🔄 Redirigiendo al frontend...");
+            System.out.println("===========================================");
+            
             response.sendRedirect(redirectUrl);
             
         } catch (Exception e) {
-            System.err.println("❌ Error: " + e.getMessage());
+            System.err.println("===========================================");
+            System.err.println("❌❌❌ ERROR CRÍTICO EN CALLBACK ❌❌❌");
+            System.err.println("===========================================");
+            System.err.println("Tipo de error: " + e.getClass().getName());
+            System.err.println("Mensaje: " + e.getMessage());
+            System.err.println("Stack trace:");
             e.printStackTrace();
-            response.sendRedirect("https://zugarez.vercel.app/products?paymentError=true");
+            System.err.println("===========================================");
+            System.err.println("Parámetros que causaron el error:");
+            System.err.println("  - preferenceId: " + preferenceId);
+            System.err.println("  - paymentId: " + paymentId);
+            System.err.println("  - status: " + status);
+            System.err.println("===========================================");
+            
+            // Redirigir con información del error
+            String errorMsg = e.getMessage() != null ? e.getMessage() : "Unknown error";
+            String redirectUrl = String.format(
+                "https://zugarez.vercel.app/products?paymentError=true&errorMsg=%s&preferenceId=%s&paymentId=%s",
+                errorMsg.replace(" ", "_"),
+                preferenceId != null ? preferenceId : "null",
+                paymentId
+            );
+            
+            System.err.println("🔄 Redirigiendo con error: " + redirectUrl);
+            response.sendRedirect(redirectUrl);
         }
     }
 

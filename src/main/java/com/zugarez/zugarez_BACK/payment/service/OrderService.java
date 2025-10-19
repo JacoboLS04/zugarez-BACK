@@ -132,22 +132,61 @@ public class OrderService {
 
     @Transactional
     public Order updateOrderStatus(String preferenceId, OrderStatus status, String paymentId) {
-        System.out.println("=== ACTUALIZANDO ESTADO DE ORDEN ===");
-        System.out.println("Preference ID: " + preferenceId);
+        System.out.println("=== OrderService.updateOrderStatus ===");
+        System.out.println("Buscando orden con preferenceId: " + preferenceId);
         System.out.println("Nuevo estado: " + status);
         System.out.println("Payment ID: " + paymentId);
         
-        Order order = orderRepository.findByMercadopagoPreferenceId(preferenceId)
-            .orElseThrow(() -> new RuntimeException("Orden no encontrada con preference ID: " + preferenceId));
+        try {
+            Order order = orderRepository.findByMercadopagoPreferenceId(preferenceId)
+                .orElseThrow(() -> {
+                    System.err.println("❌ Orden NO encontrada en BD con preferenceId: " + preferenceId);
+                    System.err.println("💡 Buscando todas las órdenes recientes para debug...");
+                    
+                    List<Order> recentOrders = orderRepository.findAll()
+                        .stream()
+                        .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                        .limit(5)
+                        .toList();
+                    
+                    System.err.println("📋 Últimas 5 órdenes en BD:");
+                    recentOrders.forEach(o -> {
+                        System.err.println(String.format(
+                            "  - ID: %d | PreferenceId: %s | Status: %s",
+                            o.getId(),
+                            o.getMercadopagoPreferenceId(),
+                            o.getStatus()
+                        ));
+                    });
+                    
+                    return new RuntimeException("Orden no encontrada con preference ID: " + preferenceId);
+                });
 
-        order.setStatus(status);
-        if (paymentId != null && !paymentId.isEmpty()) {
-            order.setMercadopagoPaymentId(paymentId);
+            System.out.println("✅ Orden encontrada:");
+            System.out.println("  - ID: " + order.getId());
+            System.out.println("  - Estado actual: " + order.getStatus());
+            System.out.println("  - Usuario: " + order.getUser().getUsername());
+            System.out.println("  - Total: " + order.getTotal());
+
+            order.setStatus(status);
+            if (paymentId != null && !paymentId.isEmpty()) {
+                order.setMercadopagoPaymentId(paymentId);
+                System.out.println("✅ Payment ID asignado: " + paymentId);
+            }
+
+            order = orderRepository.save(order);
+            System.out.println("✅ Orden actualizada en BD exitosamente");
+            System.out.println("  - Nuevo estado: " + order.getStatus());
+            System.out.println("=====================================");
+            
+            return order;
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error en updateOrderStatus:");
+            System.err.println("Tipo: " + e.getClass().getName());
+            System.err.println("Mensaje: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
         }
-
-        order = orderRepository.save(order);
-        System.out.println("Estado actualizado para orden ID: " + order.getId());
-        
-        return order;
     }
 }
