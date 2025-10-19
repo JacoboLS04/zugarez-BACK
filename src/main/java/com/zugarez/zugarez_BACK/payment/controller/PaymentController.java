@@ -67,8 +67,8 @@ public class PaymentController {
             System.out.println("Total: " + order.getTotal());
             System.out.println("Preference ID: " + order.getMercadopagoPreferenceId());
 
-            // ✅ Construir URL de sandbox directamente
-            String sandboxUrl = "https://sandbox.mercadopago.com.co/checkout/v1/redirect?pref_id=" 
+            // Usar sandbox URL para credenciales de prueba
+            String checkoutUrl = "https://sandbox.mercadopago.com.co/checkout/v1/redirect?pref_id=" 
                 + order.getMercadopagoPreferenceId();
 
             Map<String, Object> response = new HashMap<>();
@@ -78,31 +78,28 @@ public class PaymentController {
             response.put("tax", order.getTax());
             response.put("total", order.getTotal());
             response.put("publicKey", mercadoPagoService.getPublicKey());
-            response.put("sandboxUrl", sandboxUrl);
-            response.put("checkoutUrl", sandboxUrl);
+            response.put("checkoutUrl", checkoutUrl);
 
-            System.out.println("✅ Checkout URL: " + sandboxUrl);
+            System.out.println("✅ Checkout URL: " + checkoutUrl);
             System.out.println("");
-            System.out.println("📋 INSTRUCCIONES - MODO SANDBOX:");
+            System.out.println("🎯 INSTRUCCIONES FINALES - MODO SANDBOX:");
             System.out.println("════════════════════════════════════════════════");
-            System.out.println("1. Abre la URL en tu navegador");
-            System.out.println("2. MercadoPago te pedirá un email - INGRESA:");
-            System.out.println("   test_user_7191328507@testuser.com");
-            System.out.println("   (o el email de tu usuario de prueba)");
+            System.out.println("1. Abre la URL en NAVEGADOR INCÓGNITO (Ctrl+Shift+N)");
+            System.out.println("2. Cuando MercadoPago pida iniciar sesión, usa:");
+            System.out.println("   👤 Usuario: TESTUSER7191328507680256966");
+            System.out.println("   🔑 Contraseña: p4mhJvbM7Z");
             System.out.println("");
-            System.out.println("3. Luego te pedirá login:");
-            System.out.println("   Usuario: TESTUSER7191328507680256966");
-            System.out.println("   Contraseña: p4mhJvbM7Z");
+            System.out.println("3. Paga con tarjeta de prueba:");
+            System.out.println("   💳 Número: 5031 7557 3453 0604");
+            System.out.println("   👤 Nombre: APRO (para aprobar automáticamente)");
+            System.out.println("   🔒 CVV: 123");
+            System.out.println("   📅 Vencimiento: 11/25");
             System.out.println("");
-            System.out.println("4. Selecciona método de pago y usa tarjeta:");
-            System.out.println("   Número: 5031 7557 3453 0604");
-            System.out.println("   CVV: 123");
-            System.out.println("   Vencimiento: 11/25");
-            System.out.println("   Nombre: APRO (para aprobar)");
-            System.out.println("");
-            System.out.println("💡 Si pide 'Iniciar sesión con cuenta de prueba',");
-            System.out.println("   usa las credenciales del comprador (arriba)");
+            System.out.println("✅ Ahora las credenciales están CORRECTAMENTE vinculadas");
+            System.out.println("✅ Vendedor: zugarez_vendedor (2932784465)");
+            System.out.println("✅ Comprador: comprador_zugarez_2 (2932784463)");
             System.out.println("════════════════════════════════════════════════");
+            System.out.println("=== CHECKOUT COMPLETADO ===");
             
             return ResponseEntity.ok(response);
 

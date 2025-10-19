@@ -5,6 +5,7 @@ import com.mercadopago.client.preference.PreferenceBackUrlsRequest;
 import com.mercadopago.client.preference.PreferenceClient;
 import com.mercadopago.client.preference.PreferenceItemRequest;
 import com.mercadopago.client.preference.PreferenceRequest;
+import com.mercadopago.client.preference.PreferencePaymentMethodsRequest;
 import com.mercadopago.resources.preference.Preference;
 import com.zugarez.zugarez_BACK.payment.entity.Order;
 import com.zugarez.zugarez_BACK.payment.entity.OrderItem;
@@ -27,30 +28,32 @@ public class MercadoPagoService {
 
     @PostConstruct
     public void init() {
-        if (accessToken == null || accessToken.isEmpty() || accessToken.equals("TEST-YOUR_ACCESS_TOKEN_HERE")) {
-            System.err.println("⚠️ WARNING: MercadoPago Access Token no configurado.");
+        if (accessToken == null || accessToken.isEmpty()) {
+            System.err.println("⚠️ MercadoPago Access Token no configurado.");
         } else {
             MercadoPagoConfig.setAccessToken(accessToken);
             System.out.println("✅ MercadoPago configurado correctamente");
             System.out.println("Access Token: " + accessToken.substring(0, Math.min(20, accessToken.length())) + "...");
             
-            if (accessToken.startsWith("TEST-")) {
-                System.out.println("🧪 Modo SANDBOX activado");
+            // Verificar el User ID del token
+            String[] parts = accessToken.split("-");
+            String userId = parts.length > 0 ? parts[parts.length - 1] : "desconocido";
+            
+            if (userId.equals("2932784465")) {
+                System.out.println("✅ Usuario vendedor de prueba CORRECTO (ID: 2932784465)");
+                System.out.println("🧪 Modo SANDBOX con usuario vinculado");
                 System.out.println("");
-                System.out.println("📋 PARA PROBAR PAGOS EN SANDBOX:");
-                System.out.println("1. Al abrir el checkout de MercadoPago");
-                System.out.println("2. Ingresa el email del comprador de prueba");
-                System.out.println("3. Usuario: TESTUSER7191328507680256966");
-                System.out.println("4. Contraseña: p4mhJvbM7Z");
-                System.out.println("5. Usa tarjeta de prueba: 5031 7557 3453 0604");
-            } else {
-                System.out.println("🔴 Modo PRODUCCIÓN activado");
+                System.out.println("🎯 CREDENCIALES DE PRUEBA CONFIGURADAS:");
+                System.out.println("   Vendedor: zugarez_vendedor (ID: 2932784465)");
+                System.out.println("   Comprador: TESTUSER7191328507680256966");
+            } else if (accessToken.startsWith("TEST-")) {
+                System.out.println("🧪 Modo SANDBOX");
+            } else if (accessToken.startsWith("APP_USR-")) {
+                System.out.println("🔴 Modo PRODUCCIÓN/PRUEBA");
             }
         }
         
-        if (publicKey == null || publicKey.isEmpty()) {
-            System.err.println("⚠️ WARNING: MercadoPago Public Key no configurado.");
-        } else {
+        if (publicKey != null && !publicKey.isEmpty()) {
             System.out.println("Public Key: " + publicKey.substring(0, Math.min(20, publicKey.length())) + "...");
         }
     }
@@ -59,11 +62,6 @@ public class MercadoPagoService {
         System.out.println("=== CREANDO PREFERENCIA MERCADOPAGO ===");
         System.out.println("Order ID: " + order.getId());
         System.out.println("Total: " + order.getTotal());
-        System.out.println("Items: " + order.getItems().size());
-        
-        if (accessToken == null || accessToken.isEmpty()) {
-            throw new RuntimeException("MercadoPago no está configurado.");
-        }
         
         try {
             List<PreferenceItemRequest> items = new ArrayList<>();
@@ -73,10 +71,6 @@ public class MercadoPagoService {
                 if (item.getProduct() == null) {
                     throw new RuntimeException("Item sin producto asociado");
                 }
-                
-                System.out.println("Item: " + item.getProduct().getName() + 
-                    " | Qty: " + item.getQuantity() + 
-                    " | Price: " + item.getPrice());
                 
                 PreferenceItemRequest itemRequest = PreferenceItemRequest.builder()
                     .id(String.valueOf(item.getProduct().getId()))
@@ -97,7 +91,6 @@ public class MercadoPagoService {
                 PreferenceItemRequest taxItem = PreferenceItemRequest.builder()
                     .id("tax")
                     .title("Impuesto (5%)")
-                    .description("Impuesto sobre la venta")
                     .categoryId("others")
                     .quantity(1)
                     .currencyId("COP")
@@ -113,32 +106,47 @@ public class MercadoPagoService {
                 .pending("https://zugarez.vercel.app/payment/pending")
                 .build();
 
-            // ✅ CONFIGURACIÓN CLAVE: No especificar payer para modo sandbox
+            // ✅ Configuración para permitir todos los métodos de pago sin restricciones
+            PreferencePaymentMethodsRequest paymentMethods = PreferencePaymentMethodsRequest.builder()
+                .excludedPaymentMethods(new ArrayList<>())
+                .excludedPaymentTypes(new ArrayList<>())
+                .installments(12)
+                .defaultInstallments(1)
+                .build();
+
             PreferenceRequest preferenceRequest = PreferenceRequest.builder()
                 .items(items)
                 .backUrls(backUrls)
                 .autoReturn("approved")
                 .externalReference(order.getId().toString())
                 .statementDescriptor("ZUGAREZ")
-                // ✅ NO incluir .payer() - Permitir login manual en checkout
+                .paymentMethods(paymentMethods)
+                .binaryMode(false) // ✅ Importante: permite estados pendientes
+                .marketplace("NONE") // ✅ No es marketplace
                 .build();
 
-            System.out.println("Creando preferencia...");
+            System.out.println("Creando preferencia en modo sandbox...");
             
             PreferenceClient client = new PreferenceClient();
             Preference preference = client.create(preferenceRequest);
             
             System.out.println("✅ Preferencia creada: " + preference.getId());
-            System.out.println("Init Point: " + preference.getInitPoint());
-            System.out.println("Sandbox Init Point: " + preference.getSandboxInitPoint());
+            System.out.println("");
+            System.out.println("🧪 INSTRUCCIONES SANDBOX:");
+            System.out.println("1. Abre la URL en navegador INCÓGNITO");
+            System.out.println("2. NO inicies sesión");
+            System.out.println("3. Paga como invitado con tarjeta de prueba:");
+            System.out.println("   Tarjeta: 5031 7557 3453 0604");
+            System.out.println("   CVV: 123 | Venc: 11/25");
+            System.out.println("   Nombre: APRO");
+            System.out.println("");
             
             return preference;
             
         } catch (Exception e) {
-            System.err.println("❌ ERROR creando preferencia");
-            System.err.println("Mensaje: " + e.getMessage());
+            System.err.println("❌ ERROR: " + e.getMessage());
             e.printStackTrace();
-            throw new RuntimeException("Error al crear preferencia de pago: " + e.getMessage(), e);
+            throw new RuntimeException("Error al crear preferencia: " + e.getMessage(), e);
         }
     }
 
