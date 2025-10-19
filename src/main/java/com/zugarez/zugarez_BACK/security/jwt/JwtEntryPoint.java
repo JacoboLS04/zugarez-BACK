@@ -14,10 +14,22 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
+/**
+ * Entry point for handling unauthorized access attempts with JWT.
+ * Sends a JSON response with an error message when authentication fails.
+ */
 @Component
 public class JwtEntryPoint implements AuthenticationEntryPoint {
     private static final Logger logger = LoggerFactory.getLogger(JwtEntryPoint.class);
 
+    /**
+     * Handles unauthorized access by sending a JSON error response.
+     * @param req the HTTP request
+     * @param res the HTTP response
+     * @param e the authentication exception
+     * @throws IOException if an input or output error occurs
+     * @throws ServletException if a servlet error occurs
+     */
     @Override
     public void commence(HttpServletRequest req, HttpServletResponse res, AuthenticationException e) throws IOException, ServletException {
         logger.error("Token no encontrado o inválido");

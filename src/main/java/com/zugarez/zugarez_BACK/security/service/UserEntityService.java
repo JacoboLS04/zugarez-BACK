@@ -1,7 +1,6 @@
 package com.zugarez.zugarez_BACK.security.service;
 
 import com.zugarez.zugarez_BACK.global.exceptions.AttributeException;
-import com.zugarez.zugarez_BACK.global.utils.Operations;
 import com.zugarez.zugarez_BACK.security.dto.CreateUserDto;
 import com.zugarez.zugarez_BACK.security.dto.JwtTokenDto;
 import com.zugarez.zugarez_BACK.security.dto.LoginUserDto;
@@ -9,6 +8,8 @@ import com.zugarez.zugarez_BACK.security.entity.UserEntity;
 import com.zugarez.zugarez_BACK.security.enums.RoleEnum;
 import com.zugarez.zugarez_BACK.security.jwt.JwtProvider;
 import com.zugarez.zugarez_BACK.security.repository.UserEntityRepository;
+// import io.micrometer.core.instrument.Counter;
+// import io.micrometer.core.instrument.Timer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -27,15 +28,27 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Service for user management, authentication, and registration logic.
+ * Handles user creation, login, password checks, and JWT generation.
+ */
 @Service
 public class UserEntityService {
+
     @Autowired
     EmailService emailService;
+    
     @Autowired
     UserEntityRepository userEntityRepository;
 
     @Autowired
     PasswordEncoder passwordEncoder;
+
+    // @Autowired
+    // private Counter userLoginCounter;
+
+    // @Autowired
+    // private Timer authenticationTimer;
 
     @Autowired
     JwtProvider jwtProvider;
@@ -43,6 +56,43 @@ public class UserEntityService {
     @Autowired
     AuthenticationManager authenticationManager;
 
+    /**
+     * Checks if the provided raw password matches the user's encoded password.
+     * @param user The user entity
+     * @param rawPassword The raw password to check
+     * @return true if the password matches, false otherwise
+     */
+    // Verifica la contraseña usando el PasswordEncoder
+    public boolean checkPassword(UserEntity user, String rawPassword) {
+        return passwordEncoder.matches(rawPassword, user.getPassword());
+    }
+
+    /**
+     * Generates a JWT token for the given user and logs them in.
+     * @param user The user entity
+     * @return JwtTokenDto containing the token and user
+     */
+    // Genera el JWT directamente desde el usuario
+    public JwtTokenDto loginByUser(UserEntity user) {
+        // Crear UserPrincipal desde el usuario
+        UserPrincipal userPrincipal = UserPrincipal.build(user);
+        
+        // Crear Authentication directamente sin validar contraseña
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+            userPrincipal, null, userPrincipal.getAuthorities());
+        
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String token = jwtProvider.generateToken(authentication);
+        // userLoginCounter.increment();
+        return new JwtTokenDto(token, user);
+    }
+
+    /**
+     * Creates a new user with the provided data (verified by default).
+     * @param dto Data for the new user
+     * @return The created UserEntity
+     * @throws AttributeException if validation fails
+     */
     public UserEntity create(CreateUserDto dto) throws AttributeException {
         if (dto.getUsername() == null || dto.getUsername().trim().isEmpty())
             throw new AttributeException("El nombre de usuario es obligatorio");
@@ -63,6 +113,12 @@ public class UserEntityService {
         return userEntityRepository.save(user);
     }
 
+    /**
+     * Creates a new admin user with the provided data (verified by default).
+     * @param dto Data for the new admin user
+     * @return The created UserEntity
+     * @throws AttributeException if validation fails
+     */
     public UserEntity createAdmin(CreateUserDto dto) throws AttributeException {
         if (dto.getUsername() == null || dto.getUsername().trim().isEmpty())
             throw new AttributeException("El nombre de usuario es obligatorio");
@@ -83,6 +139,13 @@ public class UserEntityService {
         return userEntityRepository.save(user);
     }
 
+    /**
+     * Creates a new user with the provided data (unverified).
+     * Sends a verification email with a token.
+     * @param dto Data for the new user
+     * @return The created UserEntity
+     * @throws AttributeException if validation fails
+     */
     public UserEntity createUser(CreateUserDto dto) throws AttributeException {
         if (dto.getUsername() == null || dto.getUsername().trim().isEmpty())
             throw new AttributeException("El nombre de usuario es obligatorio");
@@ -105,37 +168,48 @@ public class UserEntityService {
         return user;
     }
 
+    /**
+     * Authenticates the user with the given credentials and generates a JWT token.
+     * @param dto Login credentials
+     * @return JwtTokenDto containing the token and user
+     */
     public JwtTokenDto login(LoginUserDto dto){
-        System.out.println("=== INTENTO DE LOGIN ===");
-        System.out.println("Username: " + dto.getUsername());
-        System.out.println("Password recibida: " + dto.getPassword());
-        boolean userExists = userEntityRepository.existsByUsername(dto.getUsername());
-        System.out.println("Usuario existe en BD: " + userExists);
-        UserEntity user = null;
-        if (userExists) {
-            user = userEntityRepository.findByUsername(dto.getUsername()).orElse(null);
-            if (user != null) {
-                if (!user.isVerified()) {
-                    throw new RuntimeException("Usuario no verificado. Revisa tu correo electrónico.");
-                }
-                System.out.println("Usuario encontrado - ID: " + user.getId());
-                System.out.println("Username en BD: " + user.getUsername());
-                System.out.println("Password encriptada en BD: " + user.getPassword());
-                System.out.println("Roles: " + user.getRoles());
-            }
-        }
+        // Timer.Sample sample = Timer.start();
         try {
-            Authentication authentication =
-                    authenticationManager.authenticate(
-                            new UsernamePasswordAuthenticationToken(dto.getUsername(), dto.getPassword()));
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            String token = jwtProvider.generateToken(authentication);
-            System.out.println("Login exitoso - Token generado: " + token.substring(0, 20) + "...");
-            JwtTokenDto response = new JwtTokenDto(token, user);
-            return response;
-        } catch (Exception e) {
-            System.out.println("Error en autenticación: " + e.getMessage());
-            throw e;
+            System.out.println("=== INTENTO DE LOGIN ===");
+            System.out.println("Username: " + dto.getUsername());
+            System.out.println("Password recibida: " + dto.getPassword());
+            boolean userExists = userEntityRepository.existsByUsername(dto.getUsername());
+            System.out.println("Usuario existe en BD: " + userExists);
+            UserEntity user = null;
+            if (userExists) {
+                user = userEntityRepository.findByUsername(dto.getUsername()).orElse(null);
+                if (user != null) {
+                    if (!user.isVerified()) {
+                        throw new RuntimeException("Usuario no verificado. Revisa tu correo electrónico.");
+                    }
+                    System.out.println("Usuario encontrado - ID: " + user.getId());
+                    System.out.println("Username en BD: " + user.getUsername());
+                    System.out.println("Password encriptada en BD: " + user.getPassword());
+                    System.out.println("Roles: " + user.getRoles());
+                }
+            }
+            try {
+                Authentication authentication =
+                        authenticationManager.authenticate(
+                                new UsernamePasswordAuthenticationToken(dto.getUsername(), dto.getPassword()));
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                String token = jwtProvider.generateToken(authentication);
+                System.out.println("Login exitoso - Token generado: " + token.substring(0, 20) + "...");
+                JwtTokenDto response = new JwtTokenDto(token, user);
+                // userLoginCounter.increment();
+                return response;
+            } catch (Exception e) {
+                System.out.println("Error en autenticación: " + e.getMessage());
+                throw e;
+            }
+        } finally {
+            // sample.stop(authenticationTimer);
         }
     }
 
@@ -152,6 +226,11 @@ public class UserEntityService {
         return user;
     }
 
+    /**
+     * Verifies the user by the given token, activating the user account.
+     * @param token The verification token
+     * @return MessageDto with the result of the operation
+     */
     @Transactional
     public MessageDto verifyUser(String token) {
         System.out.println("[VERIFY SERVICE] Buscando token: " + token);
@@ -173,4 +252,3 @@ public class UserEntityService {
         return new MessageDto(HttpStatus.OK, "Usuario verificado correctamente");
     }
 }
-

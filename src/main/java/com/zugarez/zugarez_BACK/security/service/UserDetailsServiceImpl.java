@@ -2,7 +2,8 @@ package com.zugarez.zugarez_BACK.security.service;
 
 import com.zugarez.zugarez_BACK.security.entity.UserEntity;
 import com.zugarez.zugarez_BACK.security.repository.UserEntityRepository;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -14,30 +15,25 @@ import java.util.Optional;
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
 
+    private static final Logger logger = LoggerFactory.getLogger(UserDetailsServiceImpl.class);
+
     @Autowired
     UserEntityRepository userEntityRepository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        System.out.println("=== CARGANDO USUARIO PARA AUTENTICACIÓN ===");
-        System.out.println("Buscando usuario: " + username);
+        logger.debug("Cargando usuario para autenticación: {}", username);
         
         Optional<UserEntity> userEntity = userEntityRepository.findByUsername(username);
-        if (!userEntity.isPresent()) {
-        }
-        System.out.println("Usuario encontrado: " + userEntity.isPresent());
-
+        
         if(!userEntity.isPresent()) {
-            System.out.println("Usuario no encontrado en BD");
+            logger.error("Usuario no encontrado: {}", username);
             throw new UsernameNotFoundException("Usuario no encontrado");
         }
 
         UserEntity user = userEntity.get();
-        System.out.println("Usuario cargado - ID: " + user.getId() + ", Username: " + user.getUsername());
-        System.out.println("Password encriptada: " + user.getPassword());
-        System.out.println("Roles: " + user.getRoles());
+        logger.info("Usuario cargado: {} (ID: {})", user.getUsername(), user.getId());
 
         return UserPrincipal.build(user);
     }
-
 }

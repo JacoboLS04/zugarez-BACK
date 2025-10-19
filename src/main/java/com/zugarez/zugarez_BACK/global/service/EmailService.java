@@ -6,11 +6,53 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import jakarta.mail.internet.MimeMessage;
 
+/**
+ * Service for sending emails related to login codes and account verification.
+ * Uses JavaMailSender to send HTML emails for authentication and verification flows.
+ */
 @Service
 public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
+    /**
+     * Sends a login code email to the specified recipient.
+     * @param to Recipient email address
+     * @param code Login code to send
+     */
+    public void sendLoginCodeEmail(String to, int code) {
+        try {
+            System.out.println("[EmailService] Enviando código de login a: " + to);
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setTo(to);
+            helper.setSubject("🔐 Código de acceso a Zugarez");
+            String htmlContent = String.format("""
+                <html>
+                <body style='font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;background:#f5f7fa;padding:40px;'>
+                    <div style='max-width:400px;margin:auto;background:#fff;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.08);padding:32px;text-align:center;'>
+                        <h2 style='color:#667eea;'>Tu código de acceso</h2>
+                        <p style='font-size:18px;color:#374151;'>Ingresa el siguiente código para completar tu inicio de sesión:</p>
+                        <div style='font-size:48px;font-weight:bold;color:#10b981;margin:24px 0;'>%02d</div>
+                        <p style='color:#6b7280;font-size:14px;'>Este código es válido por tiempo limitado y solo para tu cuenta.</p>
+                    </div>
+                </body>
+                </html>
+            """, code);
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+            System.out.println("[EmailService] Código de login enviado correctamente a: " + to);
+        } catch (Exception e) {
+            System.out.println("[EmailService] Error al enviar código de login: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Sends an account verification email with a verification token link.
+     * @param to Recipient email address
+     * @param token Verification token
+     */
     public void sendVerificationEmail(String to, String token) {
         try {
             System.out.println("[EmailService] Enviando correo de verificación a: " + to);
@@ -20,8 +62,8 @@ public class EmailService {
             
             helper.setTo(to);
             helper.setSubject("🔐 Verifica tu cuenta en Zugarez");
-            
-            String verificationUrl = "http://localhost:8080/auth/verify?token=" + token;
+            //TODO: Esta mierdota va al front o va al back? Supongo que back pero se ve feito
+            String verificationUrl = "https://better-billi-zugarez-sys-ed7b78de.koyeb.app/auth/verify?token=" + token;
             
             String htmlContent = """
                 <!DOCTYPE html>

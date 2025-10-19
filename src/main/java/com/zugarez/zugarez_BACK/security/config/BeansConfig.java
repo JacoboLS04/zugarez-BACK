@@ -7,14 +7,27 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+/**
+ * Configuration class for security-related beans.
+ * Provides beans for password encoding and authentication management.
+ */
 @Configuration
 public class BeansConfig {
-
+    /**
+     * Provides a BCrypt password encoder bean.
+     * @return PasswordEncoder instance
+     */
     @Bean
     public PasswordEncoder passwordEncoder(){
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * Provides an AuthenticationManager bean.
+     * @param configuration the authentication configuration
+     * @return AuthenticationManager instance
+     * @throws Exception if an error occurs
+     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();

@@ -9,24 +9,94 @@ import com.zugarez.zugarez_BACK.security.dto.LoginUserDto;
 import com.zugarez.zugarez_BACK.security.entity.UserEntity;
 import com.zugarez.zugarez_BACK.security.service.UserEntityService;
 import com.zugarez.zugarez_BACK.security.repository.UserEntityRepository;
-import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.Optional;
 
+import java.util.Optional;
+import java.time.LocalDateTime;
+import java.util.Random;
+import java.util.Map;
+import java.util.HashMap;
+
+/**
+ * REST controller for authentication and user verification endpoints.
+ * Handles user login, registration, and verification code logic.
+ */
 @RestController
 @RequestMapping("/auth")
 @CrossOrigin(origins = "*", maxAge = 3600)
 public class AuthController {
+    
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+    
     @Autowired
     UserEntityService userEntityService;
     @Autowired
     UserEntityRepository userEntityRepository;
     @Autowired
     TemplateService templateService;
+    @Autowired
+    com.zugarez.zugarez_BACK.global.service.EmailService emailService;
+
+    /**
+     * Verifies a code for a user by email or username.
+     * @param dto VerificationCodeDto containing email/username and code
+     * @return ResponseEntity with verification result
+     */
+    @PostMapping("/verify-code")
+    public ResponseEntity<?> verifyCode(@Valid @RequestBody com.zugarez.zugarez_BACK.security.dto.VerificationCodeDto dto) {
+        logger.info("Verificando código para email/username: {}", dto.getEmail());
+        
+        Optional<UserEntity> userOpt = Optional.empty();
+        
+        if (dto.getEmail() != null && !dto.getEmail().isEmpty()) {
+            userOpt = userEntityRepository.findByEmail(dto.getEmail());
+        }
+        if (userOpt.isEmpty() && dto.getUsername() != null && !dto.getUsername().isEmpty()) {
+            userOpt = userEntityRepository.findByUsername(dto.getUsername());
+        }
+        
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new MessageDto(HttpStatus.UNAUTHORIZED, "Usuario no encontrado"));
+        }
+        
+        UserEntity user = userOpt.get();
+        
+        // BLOQUEAR usuarios desactivados
+        if (user.getDeactivatedAt() != null) {
+            logger.warn("Usuario desactivado intentando login: {}", user.getUsername());
+            Map<String,Object> body = new HashMap<>();
+            body.put("error", "Tu cuenta ha sido desactivada");
+            body.put("message", "Tu solicitud de baja fue procesada. Contacta soporte si deseas reactivar tu cuenta.");
+            body.put("deactivatedAt", user.getDeactivatedAt());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+        }
+        
+        // Verificar código
+        if (user.getLoginCode() == null || !user.getLoginCode().equals(dto.getCode())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new MessageDto(HttpStatus.UNAUTHORIZED, "Código incorrecto"));
+        }
+        
+        if (user.getLoginCodeExpiry() == null || LocalDateTime.now().isAfter(user.getLoginCodeExpiry())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new MessageDto(HttpStatus.UNAUTHORIZED, "Código expirado"));
+        }
+        
+        // Limpiar código y generar JWT
+        user.setLoginCode(null);
+        user.setLoginCodeExpiry(null);
+        userEntityRepository.save(user);
+        
+        JwtTokenDto jwtTokenDto = userEntityService.loginByUser(user);
+        return ResponseEntity.ok(jwtTokenDto);
+    }
 
     @PostMapping("/create")
     public ResponseEntity<MessageDto> create(@Valid @RequestBody CreateUserDto dto) throws AttributeException {
@@ -52,10 +122,51 @@ public class AuthController {
         );
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<JwtTokenDto> create(@Valid @RequestBody LoginUserDto dto) throws AttributeException {
-        JwtTokenDto jwtTokenDto = userEntityService.login(dto);
-        return ResponseEntity.ok(jwtTokenDto);
+    // Paso 1: Login con envío de código
+    @PostMapping("/login/init")
+    public ResponseEntity<MessageDto> loginInit(@Valid @RequestBody LoginUserDto dto) {
+        logger.info("Iniciando login para: {}", dto.getEmail());
+        
+        Optional<UserEntity> userOpt = Optional.empty();
+        if (dto.getEmail() != null && !dto.getEmail().isEmpty()) {
+            userOpt = userEntityRepository.findByEmail(dto.getEmail()); 
+        }
+        if (userOpt.isEmpty() && dto.getUsername() != null && !dto.getUsername().isEmpty()) {
+            userOpt = userEntityRepository.findByUsername(dto.getUsername());
+        }
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new MessageDto(HttpStatus.UNAUTHORIZED, "Usuario o contraseña incorrectos"));
+        }
+        
+        UserEntity user = userOpt.get();
+        
+        // BLOQUEAR usuarios desactivados antes de validar password
+        if (user.getDeactivatedAt() != null) {
+            logger.warn("Usuario desactivado intentando login: {}", user.getUsername());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new MessageDto(HttpStatus.FORBIDDEN, "Tu cuenta ha sido desactivada. Contacta soporte para reactivarla."));
+        }
+        
+        if (!userEntityService.checkPassword(user, dto.getPassword())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new MessageDto(HttpStatus.UNAUTHORIZED, "Usuario o contraseña incorrectos"));
+        }
+        
+        Random random = new Random();
+        int code = 100000 + random.nextInt(900000); // Código de 6 dígitos (100000-999999)
+        String codeStr = String.valueOf(code);
+        LocalDateTime expiry = LocalDateTime.now().plusMinutes(5);
+        
+        user.setLoginCode(codeStr);
+        user.setLoginCodeExpiry(expiry);
+        userEntityRepository.save(user);
+        
+        logger.info("Código de 6 dígitos generado para {}: {}", user.getUsername(), codeStr);
+        
+        emailService.sendLoginCodeEmail(user.getEmail(), code);
+        
+        return ResponseEntity.ok(new MessageDto(HttpStatus.OK, "Código enviado al correo"));
     }
 
     @GetMapping("/verify")

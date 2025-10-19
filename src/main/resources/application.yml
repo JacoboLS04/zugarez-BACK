@@ -1,0 +1,20 @@
+# ...existing configuration...
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,metrics,prometheus"
+  endpoint:
+    prometheus:
+      enabled: true
+    health:
+      enabled: true
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  server:
+    port: 8000
+prometheus:
+  server:
+    url: "http://localhost:9090"  # URL de tu servidor Prometheus

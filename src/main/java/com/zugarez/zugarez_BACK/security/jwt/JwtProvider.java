@@ -15,14 +15,20 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Component for generating, parsing, and validating JWT tokens.
+ * Handles token creation, extraction of username, and validation logic.
+ */
 @Component
 public class JwtProvider {
 
-    private static final Logger logger = LoggerFactory.getLogger(JwtEntryPoint.class);
+    // Use this class for the logger to avoid accidental wrong-class references
+    private static final Logger logger = LoggerFactory.getLogger(JwtProvider.class);
 
     @Value("${jwt.secret}")
     private String secret;
@@ -30,17 +36,29 @@ public class JwtProvider {
     @Value("${jwt.expiration}")
     private int expiration;
 
+    /**
+     * Generates a JWT token for the authenticated user.
+     * Adds userId claim so we can extract it later.
+     * @param authentication the authentication object
+     * @return the generated JWT token
+     */
     public String generateToken(Authentication authentication) {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
         return Jwts.builder()
                 .signWith(getKey(secret))
                 .setSubject(userPrincipal.getUsername())
+                .claim("userId", userPrincipal.getUsername()) // use username because UserPrincipal#getId() is not available
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(new Date().getTime() + expiration * 1000))
                 .claim("roles", getRoles(userPrincipal))
                 .compact();
     }
 
+    /**
+     * Extracts the username from a JWT token.
+     * @param token the JWT token
+     * @return the username
+     */
     public String getUsernameFromToken(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getKey(secret))
@@ -50,6 +68,34 @@ public class JwtProvider {
                 .getSubject();
     }
 
+    /**
+     * Extracts the userId claim (if present) from the JWT token.
+     * @param token the JWT token
+     * @return userId or null if not present / parsable
+     */
+    public Integer getUserIdFromToken(String token) {
+        try {
+            Object claim = Jwts.parserBuilder()
+                    .setSigningKey(getKey(secret))
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody()
+                    .get("userId");
+            if (claim == null) return null;
+            if (claim instanceof Integer) return (Integer) claim;
+            if (claim instanceof Long) return ((Long) claim).intValue();
+            if (claim instanceof String) return Integer.parseInt((String) claim);
+        } catch (Exception e) {
+            logger.warn("No se pudo extraer userId del token: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Validates a JWT token.
+     * @param token the JWT token
+     * @return true if the token is valid, false otherwise
+     */
     public boolean validateToken(String token) {
         System.out.println("Validando token: " + (token != null ? token.substring(0, Math.min(20, token.length())) + "..." : "null"));
         try {
@@ -85,7 +131,18 @@ public class JwtProvider {
     }
 
     private Key getKey(String secret) {
-        byte[] secretBytes = Decoders.BASE64.decode(secret);
-        return Keys.hmacShaKeyFor(secretBytes);
+        if (secret == null || secret.isBlank()) {
+            logger.error("JWT secret is not configured or empty");
+            throw new IllegalStateException("JWT secret not configured");
+        }
+        try {
+            byte[] secretBytes = Decoders.BASE64.decode(secret);
+            return Keys.hmacShaKeyFor(secretBytes);
+        } catch (IllegalArgumentException ex) {
+            // secret was not valid base64 — fallback to raw UTF-8 bytes
+            logger.warn("JWT secret is not valid Base64, falling back to raw UTF-8 bytes: {}", ex.getMessage());
+            byte[] raw = secret.getBytes(StandardCharsets.UTF_8);
+            return Keys.hmacShaKeyFor(raw);
+        }
     }
 }
