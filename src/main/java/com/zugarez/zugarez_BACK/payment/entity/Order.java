@@ -3,6 +3,7 @@ package com.zugarez.zugarez_BACK.payment.entity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.zugarez.zugarez_BACK.security.entity.UserEntity;
 import jakarta.persistence.*;
+import org.hibernate.annotations.Check;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -10,6 +11,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "orders")
+@Check(constraints = "status IN ('PENDING', 'APPROVED', 'REJECTED', 'FAILED', 'CANCELLED', 'REFUNDED')")
 public class Order {
     
     @Id
