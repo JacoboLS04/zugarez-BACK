@@ -26,7 +26,8 @@ import java.util.stream.Collectors;
 @Component
 public class JwtProvider {
 
-    private static final Logger logger = LoggerFactory.getLogger(JwtEntryPoint.class);
+    // use this class for logger to avoid accidental reference to another class
+    private static final Logger logger = LoggerFactory.getLogger(JwtProvider.class);
 
     @Value("${jwt.secret}")
     private String secret;
@@ -129,7 +130,19 @@ public class JwtProvider {
     }
 
     private Key getKey(String secret) {
-        byte[] secretBytes = Decoders.BASE64.decode(secret);
-        return Keys.hmacShaKeyFor(secretBytes);
+        if (secret == null) {
+            logger.error("JWT secret is null");
+            throw new IllegalStateException("JWT secret not configured");
+        }
+        try {
+            // Prefer base64-decoded secret (common with jjwt examples)
+            byte[] secretBytes = Decoders.BASE64.decode(secret);
+            return Keys.hmacShaKeyFor(secretBytes);
+        } catch (IllegalArgumentException ex) {
+            // Fallback: maybe secret is raw bytes (not base64) -> use UTF-8 bytes
+            logger.warn("JWT secret is not valid base64, falling back to raw bytes: {}", ex.getMessage());
+            byte[] raw = secret.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            return Keys.hmacShaKeyFor(raw);
+        }
     }
 }
