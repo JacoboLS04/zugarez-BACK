@@ -32,18 +32,25 @@ public class PaymentController {
     @PostMapping("/checkout")
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public ResponseEntity<?> checkout(@Valid @RequestBody CheckoutRequest request, HttpServletRequest httpRequest) {
-        System.out.println("=== CHECKOUT INICIADO ===");
+        System.out.println("=== CHECKPOINT 1: Método checkout llamado ===");
+        System.out.println("Request URI: " + httpRequest.getRequestURI());
+        System.out.println("Authorization header: " + httpRequest.getHeader("Authorization"));
         
         try {
             Object o = httpRequest.getAttribute("authenticatedUser");
+            System.out.println("=== CHECKPOINT 2: Obteniendo usuario autenticado ===");
+            System.out.println("authenticatedUser attribute: " + (o != null ? o.getClass().getName() : "null"));
+            
             if (!(o instanceof UserEntity)) {
-                System.out.println("ERROR: Usuario no autenticado");
+                System.err.println("❌ ERROR: Usuario no autenticado o atributo incorrecto");
+                System.err.println("Tipo de objeto: " + (o != null ? o.getClass().getName() : "null"));
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "No autorizado"));
+                    .body(Map.of("error", "No autorizado - Usuario no autenticado"));
             }
             UserEntity user = (UserEntity) o;
             
-            System.out.println("Usuario: " + user.getUsername() + " (ID: " + user.getId() + ")");
+            System.out.println("✅ Usuario autenticado: " + user.getUsername() + " (ID: " + user.getId() + ")");
+            System.out.println("Roles: " + user.getRoles());
             System.out.println("Items en el carrito: " + request.getItems().size());
 
             if (request.getItems() == null || request.getItems().isEmpty()) {
@@ -67,7 +74,7 @@ public class PaymentController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            System.out.println("ERROR en checkout: " + e.getMessage());
+            System.err.println("❌ ERROR en checkout: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Error al procesar el pago: " + e.getMessage()));

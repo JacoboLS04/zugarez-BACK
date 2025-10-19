@@ -60,7 +60,13 @@ public class MainSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/payment/webhook").permitAll() // ✅ Webhook público
+                        .requestMatchers("/payment/**").authenticated() // ✅ Requiere autenticación
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/**").authenticated()
+                        .requestMatchers("/products/**").authenticated()
+                        .requestMatchers("/lotes/**").authenticated()
+                        .anyRequest().permitAll()
                 )
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtEntryPoint))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));

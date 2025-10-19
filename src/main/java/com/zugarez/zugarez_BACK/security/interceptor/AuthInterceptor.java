@@ -26,27 +26,40 @@ public class AuthInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        // Obtener el token del header
+        System.out.println("=== AUTH INTERCEPTOR ===");
+        System.out.println("Request URL: " + request.getRequestURL());
+        System.out.println("Method: " + request.getMethod());
+        
         String token = getTokenFromRequest(request);
+        System.out.println("Token extraído: " + (token != null ? "Presente (longitud: " + token.length() + ")" : "Ausente"));
         
         if (token != null && jwtProvider.validateToken(token)) {
+            System.out.println("✅ Token válido");
             String username = jwtProvider.getUsernameFromToken(token);
+            System.out.println("Username del token: " + username);
+            
             Optional<UserEntity> userOpt = userRepository.findByUsername(username);
             
             if (userOpt.isPresent()) {
                 UserEntity user = userOpt.get();
+                System.out.println("✅ Usuario encontrado: " + user.getUsername() + " (ID: " + user.getId() + ")");
                 
-                // Bloquear usuarios desactivados (baja voluntaria)
                 if (user.getDeactivatedAt() != null) {
+                    System.err.println("❌ Usuario desactivado - Bloqueando acceso");
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                     response.setContentType("application/json");
                     response.getWriter().write("{\"error\":\"Tu cuenta ha sido desactivada\",\"deactivatedAt\":\"" + user.getDeactivatedAt() + "\"}");
                     return false;
                 }
                 
-                // Agregar el usuario autenticado a la request para uso posterior
+                // ✅ IMPORTANTE: Agregar el usuario al request
                 request.setAttribute("authenticatedUser", user);
+                System.out.println("✅ Usuario agregado al request como 'authenticatedUser'");
+            } else {
+                System.err.println("❌ Usuario no encontrado en BD: " + username);
             }
+        } else {
+            System.err.println("❌ Token inválido o ausente");
         }
         
         return true;
