@@ -7,11 +7,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Endpoints protegidos para perfil y baja voluntaria.
@@ -110,5 +114,99 @@ public class UserController {
         resp.put("message", "Solicitud de baja procesada correctamente");
         resp.put("deactivatedAt", saved.getDeactivatedAt());
         return ResponseEntity.ok(resp);
+    }
+
+    /**
+     * Lista todos los usuarios desactivados (solo para administradores).
+     */
+    @GetMapping("/admin/users/deactivated")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getDeactivatedUsers() {
+        List<UserEntity> deactivatedUsers = userRepository.findDeactivatedUsers();
+        
+        List<Map<String, Object>> userList = deactivatedUsers.stream().map(user -> {
+            Map<String, Object> userMap = new HashMap<>();
+            userMap.put("id", user.getId());
+            userMap.put("username", user.getUsername());
+            userMap.put("email", user.getEmail());
+            userMap.put("deactivatedAt", user.getDeactivatedAt());
+            userMap.put("deactivationReason", user.getDeactivationReason());
+            userMap.put("verified", user.isVerified());
+            return userMap;
+        }).collect(Collectors.toList());
+        
+        return ResponseEntity.ok(Map.of(
+            "total", userList.size(),
+            "users", userList
+        ));
+    }
+
+    /**
+     * Reactiva un usuario desactivado (solo para administradores).
+     */
+    @PostMapping("/admin/users/{userId}/reactivate")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> reactivateUser(@PathVariable int userId, HttpServletRequest request) {
+        System.out.println("=== ENDPOINT /admin/users/" + userId + "/reactivate LLAMADO ===");
+        
+        // Obtener admin autenticado
+        Object o = request.getAttribute("authenticatedUser");
+        if (!(o instanceof UserEntity)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", "No autorizado"));
+        }
+        UserEntity admin = (UserEntity) o;
+        
+        System.out.println("Admin autenticado: " + admin.getUsername() + " (ID: " + admin.getId() + ")");
+        
+        // Buscar usuario a reactivar
+        Optional<UserEntity> userOpt = userRepository.findById(userId);
+        
+        if (userOpt.isEmpty()) {
+            System.out.println("ERROR: Usuario ID " + userId + " no encontrado");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", "Usuario no encontrado"));
+        }
+        
+        UserEntity user = userOpt.get();
+        
+        System.out.println("Usuario a reactivar: " + user.getUsername() + " (ID: " + user.getId() + ")");
+        System.out.println("DeactivatedAt actual: " + user.getDeactivatedAt());
+        
+        // Verificar que el usuario esté desactivado
+        if (user.getDeactivatedAt() == null) {
+            System.out.println("ERROR: Usuario no está desactivado");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", "El usuario no está desactivado"));
+        }
+        
+        // Guardar datos para el log
+        String previousReason = user.getDeactivationReason();
+        LocalDateTime previousDeactivatedAt = user.getDeactivatedAt();
+        
+        // Reactivar usuario
+        user.setDeactivatedAt(null);
+        user.setDeactivationReason(null);
+        UserEntity savedUser = userRepository.save(user);
+        
+        System.out.println("=== USUARIO REACTIVADO ===");
+        System.out.println("Usuario: " + savedUser.getUsername());
+        System.out.println("Reactivado por: " + admin.getUsername());
+        System.out.println("Motivo anterior: " + previousReason);
+        System.out.println("Fecha de desactivación anterior: " + previousDeactivatedAt);
+        System.out.println("DeactivatedAt ahora: " + savedUser.getDeactivatedAt());
+        
+        return ResponseEntity.ok(Map.of(
+            "message", "Usuario reactivado correctamente",
+            "userId", savedUser.getId(),
+            "username", savedUser.getUsername(),
+            "email", savedUser.getEmail(),
+            "reactivatedBy", admin.getUsername(),
+            "previousDeactivationReason", previousReason,
+            "previousDeactivatedAt", previousDeactivatedAt
+        ));
+    }
+}
+        ));
     }
 }

@@ -2,8 +2,10 @@ package com.zugarez.zugarez_BACK.security.repository;
 
 import com.zugarez.zugarez_BACK.security.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -42,4 +44,8 @@ public interface UserEntityRepository extends JpaRepository<UserEntity, Integer>
      * @return Optional containing the user if found
      */
     Optional<UserEntity> findByVerificationToken(String verificationToken);
+    
+    // Nuevo método para obtener usuarios desactivados
+    @Query("SELECT u FROM UserEntity u WHERE u.deactivatedAt IS NOT NULL ORDER BY u.deactivatedAt DESC")
+    List<UserEntity> findDeactivatedUsers();
 }
