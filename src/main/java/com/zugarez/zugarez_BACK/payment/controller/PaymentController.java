@@ -81,24 +81,28 @@ public class PaymentController {
             response.put("sandboxUrl", sandboxUrl);
             response.put("checkoutUrl", sandboxUrl);
 
-            System.out.println("✅ Sandbox URL generada: " + sandboxUrl);
+            System.out.println("✅ Checkout URL: " + sandboxUrl);
             System.out.println("");
-            System.out.println("📋 INSTRUCCIONES PARA PROBAR EL PAGO:");
+            System.out.println("📋 INSTRUCCIONES - MODO SANDBOX:");
             System.out.println("════════════════════════════════════════════════");
-            System.out.println("1. Abre la URL de checkout en tu navegador");
-            System.out.println("2. MercadoPago te pedirá iniciar sesión con un usuario de prueba");
+            System.out.println("1. Abre la URL en tu navegador");
+            System.out.println("2. MercadoPago te pedirá un email - INGRESA:");
+            System.out.println("   test_user_7191328507@testuser.com");
+            System.out.println("   (o el email de tu usuario de prueba)");
             System.out.println("");
-            System.out.println("🔐 CREDENCIALES DE PRUEBA (Comprador):");
+            System.out.println("3. Luego te pedirá login:");
             System.out.println("   Usuario: TESTUSER7191328507680256966");
             System.out.println("   Contraseña: p4mhJvbM7Z");
             System.out.println("");
-            System.out.println("💳 TARJETAS DE PRUEBA:");
-            System.out.println("   • Aprobada: 5031 7557 3453 0604 | CVV: 123 | Venc: 11/25");
-            System.out.println("   • Rechazada: 5031 4332 1540 6351 | CVV: 123 | Venc: 11/25");
+            System.out.println("4. Selecciona método de pago y usa tarjeta:");
+            System.out.println("   Número: 5031 7557 3453 0604");
+            System.out.println("   CVV: 123");
+            System.out.println("   Vencimiento: 11/25");
+            System.out.println("   Nombre: APRO (para aprobar)");
             System.out.println("");
-            System.out.println("📚 Más tarjetas en: https://www.mercadopago.com.co/developers/es/docs/checkout-pro/additional-content/test-cards");
+            System.out.println("💡 Si pide 'Iniciar sesión con cuenta de prueba',");
+            System.out.println("   usa las credenciales del comprador (arriba)");
             System.out.println("════════════════════════════════════════════════");
-            System.out.println("=== CHECKOUT COMPLETADO ===");
             
             return ResponseEntity.ok(response);
 

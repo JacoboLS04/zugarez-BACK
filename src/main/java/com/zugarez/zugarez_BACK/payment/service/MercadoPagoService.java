@@ -28,34 +28,41 @@ public class MercadoPagoService {
     @PostConstruct
     public void init() {
         if (accessToken == null || accessToken.isEmpty() || accessToken.equals("TEST-YOUR_ACCESS_TOKEN_HERE")) {
-            System.err.println("⚠️ WARNING: MercadoPago Access Token no configurado. Configura MERCADOPAGO_ACCESS_TOKEN en las variables de entorno.");
+            System.err.println("⚠️ WARNING: MercadoPago Access Token no configurado.");
         } else {
             MercadoPagoConfig.setAccessToken(accessToken);
             System.out.println("✅ MercadoPago configurado correctamente");
             System.out.println("Access Token: " + accessToken.substring(0, Math.min(20, accessToken.length())) + "...");
-            System.out.println("Cuenta: Zugarez (Colombia)");
+            
+            if (accessToken.startsWith("TEST-")) {
+                System.out.println("🧪 Modo SANDBOX activado");
+                System.out.println("");
+                System.out.println("📋 PARA PROBAR PAGOS EN SANDBOX:");
+                System.out.println("1. Al abrir el checkout de MercadoPago");
+                System.out.println("2. Ingresa el email del comprador de prueba");
+                System.out.println("3. Usuario: TESTUSER7191328507680256966");
+                System.out.println("4. Contraseña: p4mhJvbM7Z");
+                System.out.println("5. Usa tarjeta de prueba: 5031 7557 3453 0604");
+            } else {
+                System.out.println("🔴 Modo PRODUCCIÓN activado");
+            }
         }
         
-        if (publicKey == null || publicKey.isEmpty() || publicKey.equals("TEST-YOUR_PUBLIC_KEY_HERE")) {
-            System.err.println("⚠️ WARNING: MercadoPago Public Key no configurado. Configura MERCADOPAGO_PUBLIC_KEY en las variables de entorno.");
+        if (publicKey == null || publicKey.isEmpty()) {
+            System.err.println("⚠️ WARNING: MercadoPago Public Key no configurado.");
         } else {
             System.out.println("Public Key: " + publicKey.substring(0, Math.min(20, publicKey.length())) + "...");
-            System.out.println("");
-            System.out.println("🔐 Usuario de prueba configurado: TESTUSER7191328507680256966");
-            System.out.println("📧 Para pruebas, usa este usuario al pagar en MercadoPago");
         }
     }
 
     public Preference createPreference(Order order) {
         System.out.println("=== CREANDO PREFERENCIA MERCADOPAGO ===");
         System.out.println("Order ID: " + order.getId());
-        System.out.println("Subtotal: " + order.getSubtotal());
-        System.out.println("Tax: " + order.getTax());
         System.out.println("Total: " + order.getTotal());
         System.out.println("Items: " + order.getItems().size());
         
         if (accessToken == null || accessToken.isEmpty()) {
-            throw new RuntimeException("MercadoPago no está configurado. Verifica las variables de entorno.");
+            throw new RuntimeException("MercadoPago no está configurado.");
         }
         
         try {
@@ -67,15 +74,14 @@ public class MercadoPagoService {
                     throw new RuntimeException("Item sin producto asociado");
                 }
                 
-                System.out.println("Agregando item: " + item.getProduct().getName() + 
-                    " | Cantidad: " + item.getQuantity() + 
-                    " | Precio unitario: " + item.getPrice() +
-                    " | Subtotal: " + item.getSubtotal());
+                System.out.println("Item: " + item.getProduct().getName() + 
+                    " | Qty: " + item.getQuantity() + 
+                    " | Price: " + item.getPrice());
                 
                 PreferenceItemRequest itemRequest = PreferenceItemRequest.builder()
                     .id(String.valueOf(item.getProduct().getId()))
-                    .title(item.getProduct().getName() != null ? item.getProduct().getName() : "Producto")
-                    .description(item.getProduct().getDescription() != null ? item.getProduct().getDescription() : "")
+                    .title(item.getProduct().getName())
+                    .description(item.getProduct().getDescription())
                     .pictureUrl(item.getProduct().getUrlImage())
                     .categoryId("others")
                     .quantity(item.getQuantity())
@@ -86,10 +92,8 @@ public class MercadoPagoService {
                 items.add(itemRequest);
             }
 
-            // ✅ Agregar el impuesto como un item separado
+            // Agregar impuesto
             if (order.getTax().compareTo(BigDecimal.ZERO) > 0) {
-                System.out.println("Agregando impuesto como item: " + order.getTax());
-                
                 PreferenceItemRequest taxItem = PreferenceItemRequest.builder()
                     .id("tax")
                     .title("Impuesto (5%)")
@@ -109,37 +113,37 @@ public class MercadoPagoService {
                 .pending("https://zugarez.vercel.app/payment/pending")
                 .build();
 
+            // ✅ CONFIGURACIÓN CLAVE: No especificar payer para modo sandbox
             PreferenceRequest preferenceRequest = PreferenceRequest.builder()
                 .items(items)
                 .backUrls(backUrls)
                 .autoReturn("approved")
                 .externalReference(order.getId().toString())
                 .statementDescriptor("ZUGAREZ")
+                // ✅ NO incluir .payer() - Permitir login manual en checkout
                 .build();
 
-            System.out.println("Creando preferencia con MercadoPago...");
-            System.out.println("Total de items enviados a MP: " + items.size());
+            System.out.println("Creando preferencia...");
             
             PreferenceClient client = new PreferenceClient();
             Preference preference = client.create(preferenceRequest);
             
-            System.out.println("✅ Preferencia creada exitosamente");
-            System.out.println("Preference ID: " + preference.getId());
+            System.out.println("✅ Preferencia creada: " + preference.getId());
+            System.out.println("Init Point: " + preference.getInitPoint());
             System.out.println("Sandbox Init Point: " + preference.getSandboxInitPoint());
             
             return preference;
             
         } catch (Exception e) {
-            System.err.println("❌ ERROR CRÍTICO creando preferencia de MercadoPago");
+            System.err.println("❌ ERROR creando preferencia");
             System.err.println("Mensaje: " + e.getMessage());
-            System.err.println("Tipo: " + e.getClass().getName());
             e.printStackTrace();
             throw new RuntimeException("Error al crear preferencia de pago: " + e.getMessage(), e);
         }
     }
 
     public String getPublicKey() {
-        if (publicKey == null || publicKey.isEmpty() || publicKey.equals("TEST-YOUR_PUBLIC_KEY_HERE")) {
+        if (publicKey == null || publicKey.isEmpty()) {
             throw new RuntimeException("MercadoPago Public Key no configurado");
         }
         return publicKey;
