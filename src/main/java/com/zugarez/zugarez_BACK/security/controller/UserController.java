@@ -1,6 +1,7 @@
 package com.zugarez.zugarez_BACK.security.controller;
 
 import com.zugarez.zugarez_BACK.security.entity.UserEntity;
+import com.zugarez.zugarez_BACK.security.enums.RoleEnum;
 import com.zugarez.zugarez_BACK.security.repository.UserEntityRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,30 +56,32 @@ public class UserController {
         }
         UserEntity user = (UserEntity) o;
 
-        // Sanitizar
+        // Prohibir que administradores se auto-den de baja desde este endpoint
+        if (user.getRoles() != null && user.getRoles().stream().anyMatch(r -> r == RoleEnum.ROLE_ADMIN)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error","Los administradores no pueden darse de baja desde esta ruta"));
+        }
+
+        // Sanitizar y usar valores mínimos; email viene del usuario autenticado
         String name = body.name == null ? "" : body.name.trim();
-        String email = body.email == null ? "" : body.email.trim();
         String reason = body.reason == null ? "" : body.reason.trim();
+
+        if (name.isEmpty()) {
+            name = user.getUsername() != null ? user.getUsername().trim() : "";
+        }
 
         Map<String,String> details = new HashMap<>();
         if (name.isEmpty()) details.put("name","El nombre no puede estar vacío");
-        if (email.isEmpty()) details.put("email","El email no puede estar vacío");
         if (reason.length() < 10) details.put("reason","El motivo debe tener al menos 10 caracteres");
         if (!details.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error","Datos inválidos","details", details));
         }
 
-        // Verificar que el email coincide con el usuario autenticado
-        if (!email.equalsIgnoreCase(user.getEmail())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error","El email no coincide con el usuario autenticado"));
-        }
-
-        // Validar estado actual
+        // Validar estado actual: si ya estaba dado de baja -> 409
         if (!user.isVerified() && user.getDeactivatedAt() != null) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error","El usuario ya está dado de baja"));
         }
 
-        // Procesar baja (no eliminar)
+        // Actualizar estado en la base de datos (mínimo necesario)
         user.setVerified(false);
         user.setDeactivationReason(reason);
         user.setDeactivatedAt(LocalDateTime.now());
