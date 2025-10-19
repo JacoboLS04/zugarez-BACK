@@ -51,7 +51,6 @@ public class AuthController {
         Optional<UserEntity> userOpt = Optional.empty();
         
         if (dto.getEmail() != null && !dto.getEmail().isEmpty()) {
-            System.out.println("Buscando usuario por email: " + dto.getEmail());
             userOpt = userEntityRepository.findByEmail(dto.getEmail());
         }
         if (userOpt.isEmpty() && dto.getUsername() != null && !dto.getUsername().isEmpty()) {
@@ -65,8 +64,14 @@ public class AuthController {
         
         UserEntity user = userOpt.get();
         
-        // NUEVO: Bloquear usuarios desactivados ANTES de validar el código
+        System.out.println("=== VERIFICANDO ESTADO DEL USUARIO ===");
+        System.out.println("Usuario ID: " + user.getId());
+        System.out.println("DeactivatedAt: " + user.getDeactivatedAt());
+        System.out.println("Verified: " + user.isVerified());
+        
+        // BLOQUEAR usuarios desactivados (baja voluntaria)
         if (user.getDeactivatedAt() != null) {
+            System.out.println("ERROR: Usuario desactivado, bloqueando login");
             Map<String,Object> body = new HashMap<>();
             body.put("error", "Tu cuenta ha sido desactivada");
             body.put("message", "Tu solicitud de baja fue procesada. Contacta soporte si deseas reactivar tu cuenta.");
@@ -80,7 +85,7 @@ public class AuthController {
                     .body(new MessageDto(HttpStatus.UNAUTHORIZED, "Código incorrecto"));
         }
         
-        // Verificar expiración (5 minutos)
+        // Verificar expiración
         if (user.getLoginCodeExpiry() == null || LocalDateTime.now().isAfter(user.getLoginCodeExpiry())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new MessageDto(HttpStatus.UNAUTHORIZED, "Código expirado"));

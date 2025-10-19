@@ -41,14 +41,13 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
         UserEntity user = userEntity.get();
         
-        // NUEVO: Bloquear usuarios desactivados (baja voluntaria)
+        // Bloquear usuarios desactivados (baja voluntaria)
         if (user.getDeactivatedAt() != null) {
-            System.out.println("Usuario desactivado - Fecha: " + user.getDeactivatedAt());
+            System.out.println("❌ Usuario desactivado - Fecha: " + user.getDeactivatedAt());
             throw new UsernameNotFoundException("Usuario desactivado");
         }
         
-        System.out.println("Usuario cargado - ID: " + user.getId() + ", Username: " + user.getUsername());
-        System.out.println("Password encriptada: " + user.getPassword());
+        System.out.println("✅ Usuario cargado - ID: " + user.getId() + ", Username: " + user.getUsername());
         System.out.println("Roles: " + user.getRoles());
 
         return UserPrincipal.build(user);
