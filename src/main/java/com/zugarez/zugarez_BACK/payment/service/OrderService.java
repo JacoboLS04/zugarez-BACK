@@ -154,6 +154,17 @@ public class OrderService {
     }
 
     /**
+     * Retrieves all orders in the system.
+     * @return list of all orders
+     */
+    public List<Order> getAllOrders() {
+        System.out.println("📦 [ADMIN] Obteniendo TODAS las órdenes del sistema");
+        List<Order> allOrders = orderRepository.findAll();
+        System.out.println("✅ [ADMIN] Total: " + allOrders.size() + " órdenes");
+        return allOrders;
+    }
+
+    /**
      * Updates an order's status and payment ID based on payment processor callback.
      * @param preferenceId the MercadoPago preference ID
      * @param status the new order status
