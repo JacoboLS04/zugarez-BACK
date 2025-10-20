@@ -12,6 +12,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
+/**
+ * Implementation of Spring Security's UserDetailsService interface.
+ * Loads user-specific data for authentication by username.
+ */
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
 
@@ -20,6 +24,12 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Autowired
     UserEntityRepository userEntityRepository;
 
+    /**
+     * Loads a user by username for authentication purposes.
+     * @param username the username to search for
+     * @return UserDetails object containing user information and authorities
+     * @throws UsernameNotFoundException if the user is not found
+     */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         logger.debug("Cargando usuario para autenticación: {}", username);

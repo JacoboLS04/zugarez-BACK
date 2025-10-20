@@ -28,6 +28,14 @@ public class AuthInterceptor implements HandlerInterceptor {
     @Autowired
     private UserEntityRepository userRepository;
 
+    /**
+     * Pre-handles the request to validate user authentication and status.
+     * Checks if the user is deactivated and blocks access if necessary.
+     * @param request HTTP request
+     * @param response HTTP response
+     * @param handler handler
+     * @return true if the request should proceed, false otherwise
+     */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         try {
@@ -83,6 +91,13 @@ public class AuthInterceptor implements HandlerInterceptor {
         }
     }
     
+    /**
+     * Sends an error response with the specified status and message.
+     * @param response HTTP response
+     * @param status HTTP status code
+     * @param message Error message
+     * @throws IOException if writing the response fails
+     */
     private void sendErrorResponse(HttpServletResponse response, int status, String message) throws IOException {
         if (response.isCommitted()) {
             logger.warn("Response ya fue enviada, no se puede modificar");

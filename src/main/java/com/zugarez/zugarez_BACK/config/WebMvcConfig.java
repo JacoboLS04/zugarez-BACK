@@ -6,7 +6,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.*;
 
 /**
- * Registra el interceptor de autenticación JWT para las rutas protegidas.
+ * Web MVC configuration for the application.
+ * Registers authentication interceptors and configures CORS mappings.
  */
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
@@ -14,6 +15,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Autowired
     private AuthInterceptor authInterceptor;
 
+    /**
+     * Registers interceptors for request processing.
+     * Applies authentication interceptor to protected routes, excluding public endpoints.
+     * @param registry the interceptor registry
+     */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(authInterceptor)
@@ -21,6 +27,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .excludePathPatterns("/auth/**", "/public/**");
     }
 
+    /**
+     * Configures CORS (Cross-Origin Resource Sharing) mappings.
+     * Allows cross-origin requests from any origin with common HTTP methods.
+     * @param registry the CORS registry
+     */
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")

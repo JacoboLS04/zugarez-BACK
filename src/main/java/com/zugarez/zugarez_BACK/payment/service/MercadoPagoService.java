@@ -17,6 +17,10 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Service for integrating with MercadoPago payment gateway.
+ * Handles payment preference creation and configuration.
+ */
 @Service
 public class MercadoPagoService {
 
@@ -26,6 +30,10 @@ public class MercadoPagoService {
     @Value("${mercadopago.public.key:}")
     private String publicKey;
 
+    /**
+     * Initializes MercadoPago SDK with access token after bean construction.
+     * Validates credentials and configures the SDK for use.
+     */
     @PostConstruct
     public void init() {
         // ⚠️ FORZAR CREDENCIALES CORRECTAS (temporal)
@@ -62,6 +70,13 @@ public class MercadoPagoService {
         }
     }
 
+    /**
+     * Creates a MercadoPago payment preference for an order.
+     * Includes order items, tax, and callback URLs for payment flow.
+     * @param order the order to create payment preference for
+     * @return the created MercadoPago preference
+     * @throws RuntimeException if preference creation fails
+     */
     public Preference createPreference(Order order) {
         System.out.println("=== CREANDO PREFERENCIA MERCADOPAGO ===");
         System.out.println("Order ID: " + order.getId());
@@ -155,6 +170,11 @@ public class MercadoPagoService {
         }
     }
 
+    /**
+     * Gets the MercadoPago public key for client-side integration.
+     * @return the public key
+     * @throws RuntimeException if public key is not configured
+     */
     public String getPublicKey() {
         if (publicKey == null || publicKey.isEmpty()) {
             throw new RuntimeException("MercadoPago Public Key no configurado");

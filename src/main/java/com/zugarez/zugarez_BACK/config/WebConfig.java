@@ -9,6 +9,10 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+/**
+ * Web configuration for the application.
+ * Registers authentication interceptors and configures CORS settings.
+ */
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
@@ -17,6 +21,11 @@ public class WebConfig implements WebMvcConfigurer {
     @Autowired
     private AuthInterceptor authInterceptor;
 
+    /**
+     * Registers the authentication interceptor for protected routes.
+     * Excludes authentication callbacks and public endpoints.
+     * @param registry the interceptor registry
+     */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         logger.info("Registrando AuthInterceptor");
@@ -31,6 +40,10 @@ public class WebConfig implements WebMvcConfigurer {
         logger.info("Rutas protegidas: /api/**, /payment/** (excepto callbacks)");
     }
 
+    /**
+     * Configures CORS (Cross-Origin Resource Sharing) for all endpoints.
+     * @param registry the CORS registry
+     */
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")

@@ -18,6 +18,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Service for managing orders and integrating with payment processing.
+ * Handles order creation, status updates, and retrieval operations.
+ */
 @Service
 public class OrderService {
 
@@ -30,6 +34,14 @@ public class OrderService {
     @Autowired
     private MercadoPagoService mercadoPagoService;
 
+    /**
+     * Creates a new order from a checkout request.
+     * Validates products, calculates totals, and creates MercadoPago preference.
+     * @param user the user placing the order
+     * @param request the checkout request with cart items
+     * @return the created order with payment preference
+     * @throws RuntimeException if validation fails or payment setup errors occur
+     */
     @Transactional
     public Order createOrder(UserEntity user, CheckoutRequest request) {
         System.out.println("=== CREANDO ORDEN ===");
@@ -117,12 +129,23 @@ public class OrderService {
         return order;
     }
 
+    /**
+     * Retrieves an order by its ID.
+     * @param orderId the order ID
+     * @return the order
+     * @throws RuntimeException if the order is not found
+     */
     public Order getOrderById(Integer orderId) {
         System.out.println("Buscando orden ID: " + orderId);
         return orderRepository.findById(orderId)
             .orElseThrow(() -> new RuntimeException("Orden no encontrada: " + orderId));
     }
 
+    /**
+     * Retrieves all orders for a specific user.
+     * @param userId the user ID
+     * @return list of orders
+     */
     public List<Order> getOrdersByUser(Integer userId) {
         System.out.println("Obteniendo órdenes del usuario ID: " + userId);
         List<Order> orders = orderRepository.findByUserId(userId);
@@ -130,6 +153,14 @@ public class OrderService {
         return orders;
     }
 
+    /**
+     * Updates an order's status and payment ID based on payment processor callback.
+     * @param preferenceId the MercadoPago preference ID
+     * @param status the new order status
+     * @param paymentId the payment ID from MercadoPago
+     * @return the updated order
+     * @throws RuntimeException if the order is not found
+     */
     @Transactional
     public Order updateOrderStatus(String preferenceId, OrderStatus status, String paymentId) {
         System.out.println("=== OrderService.updateOrderStatus ===");
