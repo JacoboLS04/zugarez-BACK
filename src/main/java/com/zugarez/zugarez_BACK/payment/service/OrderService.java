@@ -158,9 +158,9 @@ public class OrderService {
      * @return list of all orders
      */
     public List<Order> getAllOrders() {
-        System.out.println("📦 [ADMIN] Obteniendo TODAS las órdenes del sistema");
+        System.out.println("📦 [getAllOrders] Obteniendo TODAS las órdenes del sistema");
         List<Order> allOrders = orderRepository.findAll();
-        System.out.println("✅ [ADMIN] Total: " + allOrders.size() + " órdenes");
+        System.out.println("📦 [getAllOrders] Total de órdenes: " + allOrders.size());
         return allOrders;
     }
 
