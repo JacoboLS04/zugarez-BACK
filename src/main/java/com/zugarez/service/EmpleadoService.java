@@ -23,42 +23,48 @@ public class EmpleadoService {
 
     @Transactional
     public EmpleadoDTO crearEmpleado(EmpleadoDTO dto) {
-        log.info("Iniciando creación de empleado con DNI: {}", dto.getDni());
+        log.info(">>> SERVICE: Iniciando creación de empleado");
+        log.info(">>> DNI: {}, Email: {}", dto.getDni(), dto.getEmail());
         
-        if (empleadoRepository.findByDni(dto.getDni()).isPresent()) {
-            log.error("Ya existe un empleado con DNI: {}", dto.getDni());
-            throw new RuntimeException("Ya existe un empleado con este DNI");
-        }
-        if (empleadoRepository.findByEmail(dto.getEmail()).isPresent()) {
-            log.error("Ya existe un empleado con email: {}", dto.getEmail());
-            throw new RuntimeException("Ya existe un empleado con este email");
-        }
+        try {
+            if (empleadoRepository.findByDni(dto.getDni()).isPresent()) {
+                log.error("DNI duplicado: {}", dto.getDni());
+                throw new RuntimeException("Ya existe un empleado con este DNI");
+            }
+            if (empleadoRepository.findByEmail(dto.getEmail()).isPresent()) {
+                log.error("Email duplicado: {}", dto.getEmail());
+                throw new RuntimeException("Ya existe un empleado con este email");
+            }
 
-        Empleado empleado = new Empleado();
-        empleado.setNombres(dto.getNombres());
-        empleado.setApellidos(dto.getApellidos());
-        empleado.setDni(dto.getDni());
-        empleado.setEmail(dto.getEmail());
-        empleado.setTelefono(dto.getTelefono());
-        empleado.setFechaContratacion(dto.getFechaContratacion());
-        empleado.setSalarioBase(dto.getSalarioBase());
-        empleado.setTipoContrato(dto.getTipoContrato());
-        empleado.setCuentaBancaria(dto.getCuentaBancaria());
-        empleado.setBanco(dto.getBanco());
-        empleado.setActivo(true);
+            Empleado empleado = new Empleado();
+            empleado.setNombres(dto.getNombres());
+            empleado.setApellidos(dto.getApellidos());
+            empleado.setDni(dto.getDni());
+            empleado.setEmail(dto.getEmail());
+            empleado.setTelefono(dto.getTelefono());
+            empleado.setFechaContratacion(dto.getFechaContratacion());
+            empleado.setSalarioBase(dto.getSalarioBase());
+            empleado.setTipoContrato(dto.getTipoContrato());
+            empleado.setCuentaBancaria(dto.getCuentaBancaria());
+            empleado.setBanco(dto.getBanco());
+            empleado.setActivo(true);
 
-        if (dto.getPuestoId() != null) {
-            log.info("Buscando puesto con ID: {}", dto.getPuestoId());
-            Puesto puesto = puestoRepository.findById(dto.getPuestoId())
-                    .orElseThrow(() -> new RuntimeException("Puesto no encontrado"));
-            empleado.setPuesto(puesto);
+            if (dto.getPuestoId() != null) {
+                log.info(">>> Buscando puesto ID: {}", dto.getPuestoId());
+                Puesto puesto = puestoRepository.findById(dto.getPuestoId())
+                        .orElseThrow(() -> new RuntimeException("Puesto no encontrado"));
+                empleado.setPuesto(puesto);
+            }
+
+            log.info(">>> Guardando empleado en BD...");
+            Empleado guardado = empleadoRepository.save(empleado);
+            log.info(">>> Empleado guardado con ID: {}", guardado.getId());
+            
+            return convertirADTO(guardado);
+        } catch (Exception e) {
+            log.error(">>> ERROR EN SERVICE: ", e);
+            throw e;
         }
-
-        log.info("Guardando empleado en la base de datos");
-        Empleado guardado = empleadoRepository.save(empleado);
-        log.info("Empleado guardado con ID: {}", guardado.getId());
-        
-        return convertirADTO(guardado);
     }
 
     @Transactional
