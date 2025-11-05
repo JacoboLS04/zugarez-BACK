@@ -6,6 +6,7 @@ import com.zugarez.model.Puesto;
 import com.zugarez.repository.EmpleadoRepository;
 import com.zugarez.repository.PuestoRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +15,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class EmpleadoService {
     
     private final EmpleadoRepository empleadoRepository;
@@ -21,10 +23,14 @@ public class EmpleadoService {
 
     @Transactional
     public EmpleadoDTO crearEmpleado(EmpleadoDTO dto) {
+        log.info("Iniciando creación de empleado con DNI: {}", dto.getDni());
+        
         if (empleadoRepository.findByDni(dto.getDni()).isPresent()) {
+            log.error("Ya existe un empleado con DNI: {}", dto.getDni());
             throw new RuntimeException("Ya existe un empleado con este DNI");
         }
         if (empleadoRepository.findByEmail(dto.getEmail()).isPresent()) {
+            log.error("Ya existe un empleado con email: {}", dto.getEmail());
             throw new RuntimeException("Ya existe un empleado con este email");
         }
 
@@ -42,12 +48,16 @@ public class EmpleadoService {
         empleado.setActivo(true);
 
         if (dto.getPuestoId() != null) {
+            log.info("Buscando puesto con ID: {}", dto.getPuestoId());
             Puesto puesto = puestoRepository.findById(dto.getPuestoId())
                     .orElseThrow(() -> new RuntimeException("Puesto no encontrado"));
             empleado.setPuesto(puesto);
         }
 
+        log.info("Guardando empleado en la base de datos");
         Empleado guardado = empleadoRepository.save(empleado);
+        log.info("Empleado guardado con ID: {}", guardado.getId());
+        
         return convertirADTO(guardado);
     }
 
