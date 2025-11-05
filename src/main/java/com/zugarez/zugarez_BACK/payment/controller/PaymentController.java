@@ -20,6 +20,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * REST controller for payment processing and order management.
+ * Handles checkout, order retrieval, and MercadoPago payment callbacks.
+ */
 @RestController
 @RequestMapping("/payment")
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -31,6 +35,13 @@ public class PaymentController {
     @Autowired
     private MercadoPagoService mercadoPagoService;
 
+    /**
+     * Initiates checkout process for the authenticated user.
+     * Creates an order and returns MercadoPago checkout information.
+     * @param request Checkout request with cart items
+     * @param httpRequest HTTP request containing authenticated user
+     * @return ResponseEntity with order details and checkout URL
+     */
     @PostMapping("/checkout")
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public ResponseEntity<?> checkout(@Valid @RequestBody CheckoutRequest request, HttpServletRequest httpRequest) {
@@ -77,6 +88,11 @@ public class PaymentController {
         }
     }
 
+    /**
+     * Retrieves all orders for the authenticated user.
+     * @param httpRequest HTTP request containing authenticated user
+     * @return ResponseEntity with list of user's orders
+     */
     @GetMapping("/orders")
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public ResponseEntity<?> getMyOrders(HttpServletRequest httpRequest) {
@@ -87,76 +103,23 @@ public class PaymentController {
                     .body(Map.of("error", "No autorizado"));
             }
             UserEntity user = (UserEntity) o;
-            
-            // Verificar si el usuario es ADMIN
-            boolean isAdmin = user.getRoles() != null && 
-                             user.getRoles().stream().anyMatch(r -> r.name().equals("ROLE_ADMIN"));
-            
-            List<Order> orders;
-            
-            if (isAdmin) {
-                // Si es ADMIN, devolver TODAS las órdenes del sistema
-                System.out.println("🔑 ADMIN detectado: " + user.getUsername() + " - Devolviendo TODAS las órdenes");
-                orders = orderService.getAllOrders();
-                System.out.println("📦 Total de órdenes del sistema: " + orders.size());
-            } else {
-                // Usuario normal: solo sus órdenes
-                System.out.println("👤 Usuario normal: " + user.getUsername() + " - Devolviendo solo sus órdenes");
-                orders = orderService.getOrdersByUser(user.getId());
-                System.out.println("📦 Órdenes del usuario " + user.getId() + ": " + orders.size());
-            }
-            
+
+            List<Order> orders = orderService.getOrdersByUser(user.getId());
             return ResponseEntity.ok(orders);
             
         } catch (Exception e) {
-            System.err.println("❌ Error obteniendo órdenes: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Error al obtener pedidos: " + e.getMessage()));
         }
     }
 
-    @GetMapping("/orders/all")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> getAllOrders(HttpServletRequest httpRequest) {
-        System.out.println("=== ADMIN: Obteniendo TODAS las órdenes ===");
-        
-        try {
-            Object o = httpRequest.getAttribute("authenticatedUser");
-            if (!(o instanceof UserEntity)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "No autorizado"));
-            }
-            
-            UserEntity user = (UserEntity) o;
-            
-            // Verificar que sea admin
-            boolean isAdmin = user.getRoles() != null && 
-                             user.getRoles().stream().anyMatch(r -> r.name().equals("ROLE_ADMIN"));
-            
-            if (!isAdmin) {
-                System.out.println("❌ Usuario no es admin: " + user.getUsername());
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", "Acceso denegado. Solo administradores."));
-            }
-            
-            System.out.println("✅ Admin verificado: " + user.getUsername());
-            
-            // Obtener TODAS las órdenes del sistema
-            List<Order> allOrders = orderService.getAllOrders();
-            
-            System.out.println("📦 Total de órdenes en el sistema: " + allOrders.size());
-            
-            return ResponseEntity.ok(allOrders);
-            
-        } catch (Exception e) {
-            System.err.println("❌ Error obteniendo todas las órdenes: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Error al obtener todas las órdenes: " + e.getMessage()));
-        }
-    }
-
+    /**
+     * Retrieves a specific order by ID.
+     * Users can only access their own orders, admins can access all orders.
+     * @param orderId Order ID
+     * @param httpRequest HTTP request containing authenticated user
+     * @return ResponseEntity with order details
+     */
     @GetMapping("/orders/{orderId}")
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public ResponseEntity<?> getOrder(@PathVariable Integer orderId, HttpServletRequest httpRequest) {
@@ -190,6 +153,18 @@ public class PaymentController {
         }
     }
 
+    /**
+     * Handles successful payment callback from MercadoPago.
+     * Updates order status and redirects to frontend success page.
+     * @param collectionId MercadoPago collection ID
+     * @param collectionStatus MercadoPago collection status
+     * @param paymentId MercadoPago payment ID
+     * @param status Payment status
+     * @param externalReference External reference (order ID)
+     * @param preferenceId MercadoPago preference ID
+     * @param response HTTP response for redirect
+     * @throws IOException if redirect fails
+     */
     @GetMapping("/success")
     public void paymentSuccess(
             @RequestParam("collection_id") String collectionId,
@@ -220,12 +195,7 @@ public class PaymentController {
             }
             
             System.out.println("✅ Step 1: Parámetros validados correctamente");
-            System.out.println("   - Collection ID: " + collectionId);
-            System.out.println("   - Payment ID: " + paymentId);
-            System.out.println("   - Status: " + status);
-            System.out.println("   - External Reference: " + externalReference);
-            System.out.println("   - Preference ID: " + preferenceId);
-
+            
             // Determinar el estado correcto
             OrderStatus newStatus;
             if ("approved".equals(status) || "approved".equals(collectionStatus)) {
@@ -294,6 +264,14 @@ public class PaymentController {
         }
     }
 
+    /**
+     * Handles failed payment callback from MercadoPago.
+     * Updates order status to FAILED and redirects to frontend failure page.
+     * @param externalReference External reference (order ID)
+     * @param preferenceId MercadoPago preference ID
+     * @param response HTTP response for redirect
+     * @throws IOException if redirect fails
+     */
     @GetMapping("/failure")
     public void paymentFailure(
             @RequestParam(value = "external_reference", required = false) String externalReference,
@@ -315,6 +293,14 @@ public class PaymentController {
         }
     }
 
+    /**
+     * Handles pending payment callback from MercadoPago.
+     * Updates order status to PENDING and redirects to frontend pending page.
+     * @param externalReference External reference (order ID)
+     * @param preferenceId MercadoPago preference ID
+     * @param response HTTP response for redirect
+     * @throws IOException if redirect fails
+     */
     @GetMapping("/pending")
     public void paymentPending(
             @RequestParam(value = "external_reference", required = false) String externalReference,
@@ -336,6 +322,12 @@ public class PaymentController {
         }
     }
 
+    /**
+     * Receives and processes webhook notifications from MercadoPago.
+     * Currently only logs the payment ID for "payment" events.
+     * @param payload Webhook payload
+     * @return ResponseEntity with processing result
+     */
     @PostMapping("/webhook")
     public ResponseEntity<?> webhook(@RequestBody Map<String, Object> payload) {
         System.out.println("=== WEBHOOK MERCADOPAGO ===");
@@ -359,6 +351,12 @@ public class PaymentController {
         }
     }
 
+    /**
+     * Checks the payment status of an order.
+     * @param orderId Order ID
+     * @param httpRequest HTTP request containing authenticated user
+     * @return ResponseEntity with order status details
+     */
     @GetMapping("/status/{orderId}")
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public ResponseEntity<?> checkPaymentStatus(@PathVariable Integer orderId, HttpServletRequest httpRequest) {
