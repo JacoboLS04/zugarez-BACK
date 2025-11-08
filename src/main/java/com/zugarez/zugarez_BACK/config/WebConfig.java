@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
@@ -50,5 +51,19 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedOrigins("*")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*");
+    }
+
+    /**
+     * Configures static resource handlers.
+     * Ensures that /api/** routes are not treated as static resources.
+     */
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        logger.info("Configurando recursos estáticos");
+        registry.addResourceHandler("/static/**")
+                .addResourceLocations("classpath:/static/");
+        registry.addResourceHandler("/public/**")
+                .addResourceLocations("classpath:/public/");
+        logger.info("Recursos estáticos configurados: /static/**, /public/**");
     }
 }
