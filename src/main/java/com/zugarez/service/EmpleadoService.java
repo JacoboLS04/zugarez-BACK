@@ -1,10 +1,10 @@
 package com.zugarez.service;
 
 import com.zugarez.dto.EmpleadoDTO;
-import com.zugarez.model.Empleado;
 import com.zugarez.model.Puesto;
 import com.zugarez.repository.EmpleadoRepository;
 import com.zugarez.repository.PuestoRepository;
+import com.zugarez.model.Empleado; // entidad única utilizada por el repositorio
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,69 +17,21 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class EmpleadoService {
-    
+
     private final EmpleadoRepository empleadoRepository;
     private final PuestoRepository puestoRepository;
 
     @Transactional
     public EmpleadoDTO crearEmpleado(EmpleadoDTO dto) {
-        log.info(">>> SERVICE: Iniciando creación de empleado");
-        log.info(">>> DNI: {}, Email: {}", dto.getDni(), dto.getEmail());
-        
-        try {
-            if (empleadoRepository.findByDni(dto.getDni()).isPresent()) {
-                log.error("DNI duplicado: {}", dto.getDni());
-                throw new RuntimeException("Ya existe un empleado con este DNI");
-            }
-            if (empleadoRepository.findByEmail(dto.getEmail()).isPresent()) {
-                log.error("Email duplicado: {}", dto.getEmail());
-                throw new RuntimeException("Ya existe un empleado con este email");
-            }
+        log.info(">>> SERVICE: Creación empleado (DNI={}, Email={})", dto.getDni(), dto.getEmail());
 
-            Empleado empleado = new Empleado();
-            empleado.setNombres(dto.getNombres());
-            empleado.setApellidos(dto.getApellidos());
-            empleado.setDni(dto.getDni());
-            empleado.setEmail(dto.getEmail());
-            empleado.setTelefono(dto.getTelefono());
-            empleado.setFechaContratacion(dto.getFechaContratacion());
-            empleado.setSalarioBase(dto.getSalarioBase());
-            empleado.setTipoContrato(dto.getTipoContrato());
-            empleado.setCuentaBancaria(dto.getCuentaBancaria());
-            empleado.setBanco(dto.getBanco());
-            empleado.setActivo(true);
+        if (empleadoRepository.findByDni(dto.getDni()).isPresent())
+            throw new RuntimeException("Ya existe un empleado con este DNI");
+        if (empleadoRepository.findByEmail(dto.getEmail()).isPresent())
+            throw new RuntimeException("Ya existe un empleado con este email");
 
-            if (dto.getPuestoId() != null) {
-                log.info(">>> Buscando puesto ID: {}", dto.getPuestoId());
-                Puesto puesto = puestoRepository.findById(dto.getPuestoId())
-                        .orElseThrow(() -> new RuntimeException("Puesto no encontrado"));
-                empleado.setPuesto(puesto);
-            }
-
-            log.info(">>> Guardando empleado en BD...");
-            Empleado guardado = empleadoRepository.save(empleado);
-            log.info(">>> Empleado guardado con ID: {}", guardado.getId());
-            
-            return convertirADTO(guardado);
-        } catch (Exception e) {
-            log.error(">>> ERROR EN SERVICE: ", e);
-            throw e;
-        }
-    }
-
-    @Transactional
-    public EmpleadoDTO actualizarEmpleado(Long id, EmpleadoDTO dto) {
-        Empleado empleado = empleadoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Empleado no encontrado"));
-
-        empleado.setNombres(dto.getNombres());
-        empleado.setApellidos(dto.getApellidos());
-        empleado.setEmail(dto.getEmail());
-        empleado.setTelefono(dto.getTelefono());
-        empleado.setSalarioBase(dto.getSalarioBase());
-        empleado.setTipoContrato(dto.getTipoContrato());
-        empleado.setCuentaBancaria(dto.getCuentaBancaria());
-        empleado.setBanco(dto.getBanco());
+        Empleado empleado = new Empleado();
+        asignarCamposBasicos(empleado, dto);
 
         if (dto.getPuestoId() != null) {
             Puesto puesto = puestoRepository.findById(dto.getPuestoId())
@@ -87,8 +39,25 @@ public class EmpleadoService {
             empleado.setPuesto(puesto);
         }
 
-        Empleado actualizado = empleadoRepository.save(empleado);
-        return convertirADTO(actualizado);
+        Empleado guardado = empleadoRepository.save(empleado);
+        log.info(">>> Empleado guardado ID={}", guardado.getId());
+        return convertirADTO(guardado);
+    }
+
+    @Transactional
+    public EmpleadoDTO actualizarEmpleado(Long id, EmpleadoDTO dto) {
+        Empleado empleado = empleadoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Empleado no encontrado"));
+
+        asignarCamposBasicos(empleado, dto);
+
+        if (dto.getPuestoId() != null) {
+            Puesto puesto = puestoRepository.findById(dto.getPuestoId())
+                    .orElseThrow(() -> new RuntimeException("Puesto no encontrado"));
+            empleado.setPuesto(puesto);
+        }
+
+        return convertirADTO(empleadoRepository.save(empleado));
     }
 
     @Transactional
@@ -99,6 +68,7 @@ public class EmpleadoService {
         empleadoRepository.save(empleado);
     }
 
+    @Transactional(readOnly = true)
     public List<EmpleadoDTO> obtenerEmpleadosActivos() {
         return empleadoRepository.findByActivoTrue()
                 .stream()
@@ -106,6 +76,7 @@ public class EmpleadoService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<EmpleadoDTO> obtenerTodos() {
         return empleadoRepository.findAll()
                 .stream()
@@ -113,10 +84,25 @@ public class EmpleadoService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public EmpleadoDTO obtenerEmpleadoPorId(Long id) {
         Empleado empleado = empleadoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Empleado no encontrado"));
         return convertirADTO(empleado);
+    }
+
+    private void asignarCamposBasicos(Empleado empleado, EmpleadoDTO dto) {
+        empleado.setNombres(dto.getNombres());
+        empleado.setApellidos(dto.getApellidos());
+        empleado.setDni(dto.getDni());
+        empleado.setEmail(dto.getEmail());
+        empleado.setTelefono(dto.getTelefono());
+        empleado.setFechaContratacion(dto.getFechaContratacion());
+        empleado.setSalarioBase(dto.getSalarioBase());
+        empleado.setTipoContrato(dto.getTipoContrato());
+        empleado.setCuentaBancaria(dto.getCuentaBancaria());
+        empleado.setBanco(dto.getBanco());
+        if (empleado.getActivo() == null) empleado.setActivo(true);
     }
 
     private EmpleadoDTO convertirADTO(Empleado empleado) {

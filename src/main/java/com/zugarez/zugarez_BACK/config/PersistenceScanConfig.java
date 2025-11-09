@@ -1,33 +1,20 @@
 package com.zugarez.zugarez_BACK.config;
 
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.FilterType;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
+/*
+ * Asegúrate de eliminar/renombrar la entidad duplicada Empleado en uno de los paquetes.
+ */
 @Configuration
-@ComponentScan(
-        basePackages = {
-                "com.zugarez.controller",
-                "com.zugarez.service",
-                "com.zugarez.repository",
-                "com.zugarez.model",
-                "com.zugarez.dto",
-                "com.zugarez.zugarez_BACK"
-        },
-        excludeFilters = {
-                @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE,
-                        classes = { com.zugarez.exception.GlobalExceptionHandler.class }) // excluye el handler externo duplicado
-        }
-)
 @EntityScan(basePackages = {
-        "com.zugarez.model",
-        "com.zugarez.zugarez_BACK" // si hubiera entidades internas
+        "com.zugarez.model",                       // Puesto y otras entidades
+        "com.zugarez.zugarez_BACK.global.entity"   // Empleado (única versión usada en servicio)
 })
 @EnableJpaRepositories(basePackages = {
         "com.zugarez.repository",
-        "com.zugarez.zugarez_BACK" // si hubiese repos internos
+        "com.zugarez.zugarez_BACK.security.repository"
 })
 public class PersistenceScanConfig {
     // ...existing code...

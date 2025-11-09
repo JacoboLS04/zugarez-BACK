@@ -2,7 +2,7 @@ package com.zugarez.zugarez_BACK.global.entity;
 
 import jakarta.persistence.*;
 
-@Entity
+@Entity(name = "EmpleadoGlobal")
 @Table(name = "empleado")
 public class Empleado {
     @Id

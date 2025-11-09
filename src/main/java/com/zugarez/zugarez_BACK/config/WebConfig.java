@@ -37,7 +37,7 @@ public class WebConfig implements WebMvcConfigurer {
                                    "/payment/success",
                                    "/payment/failure",
                                    "/payment/pending",
-                                   "/api/empleados/**"); // TEMPORAL: para debugging
+                                   "/api/empleados/**"); // TEMPORAL (quitar tras depurar)
         logger.info("AuthInterceptor registrado correctamente");
         logger.info("Rutas protegidas: /api/**, /payment/** (excepto callbacks)");
     }

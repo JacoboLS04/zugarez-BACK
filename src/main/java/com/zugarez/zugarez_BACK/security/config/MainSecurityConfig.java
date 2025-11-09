@@ -64,6 +64,7 @@ public class MainSecurityConfig {
                         .requestMatchers("/payment/success").permitAll() // ✅ Callback de éxito
                         .requestMatchers("/payment/failure").permitAll() // ✅ Callback de fallo
                         .requestMatchers("/payment/pending").permitAll() // ✅ Callback pendiente
+                        .requestMatchers("/api/empleados/**").permitAll() // TEMPORAL
                         .requestMatchers("/payment/**").authenticated() // ✅ Requiere autenticación
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/**").authenticated()
