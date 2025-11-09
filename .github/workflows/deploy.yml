@@ -1,0 +1,56 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          export_default_credentials: true
+
+      - name: Configure Artifact Registry auth
+        run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Build image
+        run: |
+          docker build -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPOSITORY }}/${{ secrets.SERVICE_NAME }}:latest .
+      
+      - name: Push image
+        run: |
+          docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPOSITORY }}/${{ secrets.SERVICE_NAME }}:latest
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ secrets.SERVICE_NAME }} \
+            --image ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPOSITORY }}/${{ secrets.SERVICE_NAME }}:latest \
+            --region ${{ secrets.GCP_REGION }} \
+            --platform managed \
+            --port 8000 \
+            --allow-unauthenticated
+
+      - name: Health check
+        run: |
+          echo "Comprobando estado..."
+          URL=$(gcloud run services describe ${{ secrets.SERVICE_NAME }} --region ${{ secrets.GCP_REGION }} --format='value(status.url)')
+          for i in {1..20}; do
+            if curl -fsS "$URL/actuator/health" | grep -q '"status":"UP"'; then
+              echo "Servicio OK: $URL"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Health check falló"
+          exit 1
