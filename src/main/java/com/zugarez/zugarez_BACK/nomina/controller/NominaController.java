@@ -3,6 +3,7 @@ package com.zugarez.zugarez_BACK.nomina.controller;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.zugarez.model.Empleado;
 import com.zugarez.repository.EmpleadoRepository;
+import com.zugarez.zugarez_BACK.external.supabase.SupabaseService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -14,8 +15,10 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -31,6 +34,7 @@ public class NominaController {
 
     private static final Logger log = LoggerFactory.getLogger(NominaController.class);
     private final EmpleadoRepository empleadoRepository;
+    private final SupabaseService supabaseService;
 
     @PostMapping(value = "/calcular", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Map<String, Object>> calcular(@RequestBody(required = false) CalculoNominaRequest req) {
@@ -72,6 +76,26 @@ public class NominaController {
                 "salarioNeto", salarioNeto,
                 "estado", "CALCULADO"
         );
+
+        // Persistir cálculo en Supabase
+        try {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("empleado_id", emp.getId());
+            row.put("empleado_nombre", emp.getNombres() + " " + emp.getApellidos());
+            row.put("inicio", inicio);
+            row.put("fin", fin);
+            row.put("dias", dias);
+            row.put("salario_base_mensual", salarioBase);
+            row.put("sueldo_periodo", sueldoPeriodo);
+            row.put("comisiones", comisiones);
+            row.put("bonificaciones", bonificaciones);
+            row.put("salario_neto", salarioNeto);
+            row.put("creado_en", OffsetDateTime.now());
+            supabaseService.insert(supabaseService.getNominaTable(), row);
+        } catch (Exception e) {
+            log.warn("No se pudo guardar cálculo en Supabase: {}", e.getMessage());
+        }
+
         return ResponseEntity.ok(resp);
     }
 
