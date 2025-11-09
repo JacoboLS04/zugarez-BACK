@@ -9,6 +9,8 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
+import org.springframework.web.method.HandlerTypePredicate;
 
 /**
  * Web configuration for the application.
@@ -21,6 +23,19 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Autowired
     private AuthInterceptor authInterceptor;
+
+    /**
+     * Configures path matching for the application.
+     * Adds a prefix of /api to specific packages for request mapping.
+     * @param configurer the path match configurer
+     */
+    @Override
+    public void configurePathMatch(PathMatchConfigurer configurer) {
+        // Aplica prefijo /api solo a paquetes de asistencia/nomina/reportes (no afecta a EmpleadoController)
+        configurer.addPathPrefix("/api", HandlerTypePredicate.forBasePackage("com.zugarez.asistencia"));
+        configurer.addPathPrefix("/api", HandlerTypePredicate.forBasePackage("com.zugarez.nomina"));
+        configurer.addPathPrefix("/api", HandlerTypePredicate.forBasePackage("com.zugarez.reportes"));
+    }
 
     /**
      * Registers the authentication interceptor for protected routes.
