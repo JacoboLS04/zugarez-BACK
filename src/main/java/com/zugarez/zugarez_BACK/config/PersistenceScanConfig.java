@@ -5,12 +5,13 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 /*
- * Asegúrate de eliminar/renombrar la entidad duplicada Empleado en uno de los paquetes.
+ * Asegúrate de eliminar/renombrar cualquier entidad duplicada.
+ * Aquí se escanean solo las entidades necesarias del dominio y de seguridad.
  */
 @Configuration
 @EntityScan(basePackages = {
-        "com.zugarez.model",                       // Puesto y otras entidades
-        "com.zugarez.zugarez_BACK.global.entity"   // Empleado (única versión usada en servicio)
+        "com.zugarez.model",                             // Entidades de dominio (Empleado, Puesto, etc.)
+        "com.zugarez.zugarez_BACK.security.entity"       // Entidades de seguridad (UserEntity, etc.)
 })
 @EnableJpaRepositories(basePackages = {
         "com.zugarez.repository",
