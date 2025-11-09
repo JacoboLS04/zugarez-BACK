@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.HashMap;
@@ -85,10 +86,56 @@ public class AsistenciaController {
         return ResponseEntity.ok(data);
     }
 
+    @PutMapping(value = "/{id}/salida", consumes = "application/json", produces = "application/json")
+    public ResponseEntity<Map<String, Object>> registrarSalida(
+            @PathVariable Long id,
+            @RequestBody(required = false) SalidaRequest body
+    ) {
+        Asistencia asistencia = asistenciaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Registro de asistencia no encontrado"));
+
+        if (asistencia.getHoraSalida() != null) {
+            throw new IllegalStateException("La salida ya fue registrada");
+        }
+
+        OffsetDateTime horaSalida = (body != null && body.getHoraSalida() != null) ? body.getHoraSalida() : OffsetDateTime.now();
+        asistencia.setHoraSalida(horaSalida);
+
+        if (asistencia.getHoraEntrada() != null) {
+            Duration d = Duration.between(asistencia.getHoraEntrada(), horaSalida);
+            double horas = d.toMinutes() / 60.0;
+            double horasRedondeadas = Math.round(horas * 100.0) / 100.0;
+            asistencia.setHorasTrabajadas(horasRedondeadas);
+            double extras = horasRedondeadas > 8.0 ? horasRedondeadas - 8.0 : 0.0;
+            asistencia.setHorasExtras(extras > 0 ? Math.round(extras * 100.0) / 100.0 : 0.0);
+        }
+
+        Asistencia actualizado = asistenciaRepository.save(asistencia);
+
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("id", actualizado.getId());
+        resp.put("empleadoId", actualizado.getEmpleadoId());
+        resp.put("fecha", actualizado.getFecha());
+        resp.put("horaEntrada", actualizado.getHoraEntrada());
+        resp.put("horaSalida", actualizado.getHoraSalida());
+        resp.put("turno", actualizado.getTurno());
+        resp.put("horasTrabajadas", actualizado.getHorasTrabajadas());
+        resp.put("horasExtras", actualizado.getHorasExtras());
+        resp.put("observaciones", actualizado.getObservaciones());
+        resp.put("createdAt", actualizado.getCreatedAt());
+        resp.put("status", "SALIDA_REGISTRADA");
+        return ResponseEntity.ok(resp);
+    }
+
     @Data
     public static class EntradaRequest {
         private Long empleadoId;
         private String turno;
         private String observaciones;
+    }
+
+    @Data
+    public static class SalidaRequest {
+        private OffsetDateTime horaSalida;
     }
 }
