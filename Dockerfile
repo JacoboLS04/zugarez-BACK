@@ -1,25 +1,18 @@
-FROM openjdk:17-jdk-slim
+# Etapa de build
+FROM maven:3.9.6-eclipse-temurin-17-alpine AS build
+WORKDIR /workspace
+COPY pom.xml .
+# Descarga dependencias (caché)
+RUN mvn -q -DskipTests dependency:go-offline
+COPY src src
+RUN mvn -q -DskipTests clean package
 
-# Install wget for Promtail
-RUN apt-get update && apt-get install -y wget unzip
-
-# Install Promtail
-RUN wget -O /tmp/promtail.zip https://github.com/grafana/loki/releases/download/v2.9.0/promtail-linux-amd64.zip && \
-    unzip /tmp/promtail.zip -d /tmp && \
-    mv /tmp/promtail-linux-amd64 /usr/local/bin/promtail && \
-    chmod +x /usr/local/bin/promtail && \
-    rm /tmp/promtail.zip
-
-# Copy monitoring config
-COPY monitoring/ /etc/monitoring/
-COPY start.sh /start.sh
-RUN chmod +x /start.sh
-
-# Copy jar file
-COPY target/zugarez-BACK-0.0.1-SNAPSHOT.jar app.jar
-
-# Expose port
-EXPOSE 8080
-
-# Use the start script
-CMD ["/start.sh"]
+# Etapa runtime ligera
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+ENV JAVA_OPTS=""
+# Copia jar construido
+COPY --from=build /workspace/target/zugarez-BACK-0.0.1-SNAPSHOT.jar app.jar
+EXPOSE 8000
+# Health (opcional en Cloud Run via /actuator/health)
+ENTRYPOINT ["sh","-c","java $JAVA_OPTS -jar /app/app.jar"]
