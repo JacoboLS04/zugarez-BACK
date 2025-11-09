@@ -5,21 +5,22 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 /*
- * Añadido paquete CRUD para entidades y repositorios (Product, DetallePedido, etc.).
- * Elimina cualquier clase duplicada de entidad o handler.
+ * Añadido paquete CRUD, inventory y payment para entidades y repositorios.
  */
 @Configuration
 @EntityScan(basePackages = {
         "com.zugarez.model",                             // Dominio (Empleado, Puesto, etc.)
-        "com.zugarez.zugarez_BACK.security.entity",       // Seguridad (UserEntity)
-        "com.zugarez.zugarez_BACK.CRUD.entity",            // CRUD (Product, DetallePedido)
-        "com.zugarez.zugarez_BACK.inventory.entity"       // <-- añadido
+        "com.zugarez.zugarez_BACK.security.entity",      // Seguridad (UserEntity)
+        "com.zugarez.zugarez_BACK.CRUD.entity",          // CRUD (Product, DetallePedido)
+        "com.zugarez.zugarez_BACK.inventory.entity",     // Inventario (Lote, etc.)
+        "com.zugarez.zugarez_BACK.payment.entity"        // Payment (Order, OrderItem, etc.)
 })
 @EnableJpaRepositories(basePackages = {
         "com.zugarez.repository",                        // Repos dominio
         "com.zugarez.zugarez_BACK.security.repository",  // Repos seguridad
-        "com.zugarez.zugarez_BACK.CRUD.repository",       // Repos CRUD (ProductRepository)
-        "com.zugarez.zugarez_BACK.inventory.repository"  // <-- añadido
+        "com.zugarez.zugarez_BACK.CRUD.repository",      // Repos CRUD
+        "com.zugarez.zugarez_BACK.inventory.repository", // Repos inventario
+        "com.zugarez.zugarez_BACK.payment.repository"    // Repos payment (OrderRepository)
 })
 public class PersistenceScanConfig {
     // ...existing code...
