@@ -61,16 +61,25 @@ public class NominaCalculo {
     @Column(name = "neto_pagar", precision = 19, scale = 2)
     private BigDecimal netoPagar;
 
+    @Column(name = "estado", length = 20)
+    private String estado; // CALCULADA, APROBADA, PAGADA, CANCELADA
+
+    @Column(name = "fecha_pago")
+    private LocalDate fechaPago;
+
+    @Column(name = "numero_transaccion", length = 100)
+    private String numeroTransaccion;
+
     @Column(name = "creado_en", updatable = false)
     private OffsetDateTime creadoEn;
 
     @PrePersist
     public void prePersist() {
         if (creadoEn == null) creadoEn = OffsetDateTime.now();
+        if (estado == null) estado = "CALCULADA";
     }
 
     // Getters/Setters
-    // ...existing code...
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Long getEmpleadoId() { return empleadoId; }
@@ -105,6 +114,12 @@ public class NominaCalculo {
     public void setTotalDeducciones(BigDecimal totalDeducciones) { this.totalDeducciones = totalDeducciones; }
     public BigDecimal getNetoPagar() { return netoPagar; }
     public void setNetoPagar(BigDecimal netoPagar) { this.netoPagar = netoPagar; }
+    public String getEstado() { return estado; }
+    public void setEstado(String estado) { this.estado = estado; }
+    public LocalDate getFechaPago() { return fechaPago; }
+    public void setFechaPago(LocalDate fechaPago) { this.fechaPago = fechaPago; }
+    public String getNumeroTransaccion() { return numeroTransaccion; }
+    public void setNumeroTransaccion(String numeroTransaccion) { this.numeroTransaccion = numeroTransaccion; }
     public OffsetDateTime getCreadoEn() { return creadoEn; }
     public void setCreadoEn(OffsetDateTime creadoEn) { this.creadoEn = creadoEn; }
 }

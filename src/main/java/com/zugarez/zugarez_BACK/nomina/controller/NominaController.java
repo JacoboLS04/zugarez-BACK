@@ -25,14 +25,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
-/**
- * Controlador mínimo para cálculo de nómina.
- * Endpoint esperado por el frontend: POST /api/nomina/calcular
- */
 @RestController
 @RequestMapping("/api/nomina")
 @RequiredArgsConstructor
@@ -89,25 +83,7 @@ public class NominaController {
         BigDecimal totalDeducciones = essalud.add(onp);
         BigDecimal netoPagar = totalIngresos.subtract(totalDeducciones);
 
-        Map<String, Object> resp = new LinkedHashMap<>();
-        resp.put("empleadoId", emp.getId());
-        resp.put("empleado", emp.getNombres() + " " + emp.getApellidos());
-        resp.put("periodo", Map.of("inicio", inicio, "fin", fin, "dias", dias));
-        resp.put("salarioBaseMensual", salarioBase);
-        resp.put("sueldoPeriodo", sueldoPeriodo);
-        resp.put("horasTrabajadas", horasTrabajadas);
-        resp.put("horasExtras", horasExtras);
-        resp.put("pagoHorasExtras", pagoHorasExtras);
-        resp.put("comisiones", comisiones);
-        resp.put("bonificaciones", bonificaciones);
-        resp.put("totalIngresos", totalIngresos);
-        resp.put("essalud", essalud);
-        resp.put("onp", onp);
-        resp.put("totalDeducciones", totalDeducciones);
-        resp.put("salarioNeto", netoPagar);
-        resp.put("estado", "CALCULADO");
-
-        // persistir cálculo en BD
+        // persistir cálculo en BD (estado CALCULADA)
         NominaCalculo nc = new NominaCalculo();
         nc.setEmpleadoId(emp.getId());
         nc.setEmpleadoNombre(emp.getNombres() + " " + emp.getApellidos());
@@ -125,70 +101,74 @@ public class NominaController {
         nc.setOnp(onp);
         nc.setTotalDeducciones(totalDeducciones);
         nc.setNetoPagar(netoPagar);
+        nc.setEstado("CALCULADA");
         NominaCalculo saved = nominaCalculoRepository.save(nc);
 
-        // opcional: replicar en Supabase
-        try {
-            Map<String, Object> row = new LinkedHashMap<>();
-            row.put("empleado_id", saved.getEmpleadoId());
-            row.put("empleado_nombre", saved.getEmpleadoNombre());
-            row.put("inicio", saved.getInicio());
-            row.put("fin", saved.getFin());
-            row.put("dias", saved.getDias());
-            row.put("salario_base_mensual", saved.getSalarioBaseMensual());
-            row.put("horas_trabajadas", saved.getHorasTrabajadas());
-            row.put("horas_extras", saved.getHorasExtras());
-            row.put("pago_horas_extras", saved.getPagoHorasExtras());
-            row.put("comisiones", saved.getComisiones());
-            row.put("bonificaciones", saved.getBonificaciones());
-            row.put("total_ingresos", saved.getTotalIngresos());
-            row.put("essalud", saved.getEssalud());
-            row.put("onp", saved.getOnp());
-            row.put("total_deducciones", saved.getTotalDeducciones());
-            row.put("neto_pagar", saved.getNetoPagar());
-            row.put("creado_en", OffsetDateTime.now());
-            supabaseService.insert(supabaseService.getNominaTable(), row);
-        } catch (Exception ex) {
-            log.warn("Supabase omitido: {}", ex.getMessage());
-        }
-
+        Map<String, Object> resp = new LinkedHashMap<>();
+        resp.put("id", saved.getId());
+        resp.put("empleadoNombre", saved.getEmpleadoNombre());
+        resp.put("periodoInicio", saved.getInicio());
+        resp.put("periodoFin", saved.getFin());
+        resp.put("salarioNeto", saved.getNetoPagar());
+        resp.put("estado", saved.getEstado());
+        resp.put("fechaPago", saved.getFechaPago());
+        // ...puedes añadir más campos si la UI los muestra...
         return ResponseEntity.ok(resp);
     }
 
-    @GetMapping(value = "/calculos", produces = "application/json")
-    public ResponseEntity<List<Map<String, Object>>> listarCalculos(
-            @RequestParam LocalDate inicio,
-            @RequestParam LocalDate fin,
-            @RequestParam(required = false) Long empleadoId
-    ) {
-        List<NominaCalculo> lista = (empleadoId == null)
-                ? nominaCalculoRepository.findByInicioGreaterThanEqualAndFinLessThanEqualOrderByCreadoEnDesc(inicio, fin)
-                : nominaCalculoRepository.findByEmpleadoIdAndInicioGreaterThanEqualAndFinLessThanEqualOrderByCreadoEnDesc(empleadoId, inicio, fin);
+    @GetMapping("/estado/{estado}")
+    public ResponseEntity<List<Map<String, Object>>> listarPorEstado(@PathVariable String estado) {
+        List<NominaCalculo> lista = nominaCalculoRepository.findByEstadoOrderByCreadoEnDesc(estado.toUpperCase());
+        return ResponseEntity.ok(mapListado(lista));
+    }
 
-        List<Map<String, Object>> out = lista.stream().map(n -> {
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("id", n.getId());
-            m.put("empleadoId", n.getEmpleadoId());
-            m.put("empleado", n.getEmpleadoNombre());
-            m.put("inicio", n.getInicio());
-            m.put("fin", n.getFin());
-            m.put("dias", n.getDias());
-            m.put("salarioBaseMensual", n.getSalarioBaseMensual());
-            m.put("horasTrabajadas", n.getHorasTrabajadas());
-            m.put("horasExtras", n.getHorasExtras());
-            m.put("pagoHorasExtras", n.getPagoHorasExtras());
-            m.put("comisiones", n.getComisiones());
-            m.put("bonificaciones", n.getBonificaciones());
-            m.put("totalIngresos", n.getTotalIngresos());
-            m.put("essalud", n.getEssalud());
-            m.put("onp", n.getOnp());
-            m.put("totalDeducciones", n.getTotalDeducciones());
-            m.put("salarioNeto", n.getNetoPagar());
-            m.put("creadoEn", n.getCreadoEn());
-            return m;
-        }).collect(Collectors.toList());
+    @GetMapping("/empleado/{empleadoId}")
+    public ResponseEntity<List<Map<String, Object>>> listarPorEmpleado(@PathVariable Long empleadoId) {
+        List<NominaCalculo> lista = nominaCalculoRepository.findByEmpleadoIdOrderByCreadoEnDesc(empleadoId);
+        return ResponseEntity.ok(mapListado(lista));
+    }
 
-        return ResponseEntity.ok(out);
+    @PutMapping("/{id}/aprobar")
+    public ResponseEntity<Map<String, Object>> aprobar(@PathVariable Long id) {
+        NominaCalculo n = nominaCalculoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Nómina no encontrada"));
+        if (!"CALCULADA".equalsIgnoreCase(n.getEstado()))
+            throw new IllegalStateException("Solo se puede aprobar una nómina en estado CALCULADA");
+        n.setEstado("APROBADA");
+        n = nominaCalculoRepository.save(n);
+        return ResponseEntity.ok(mapFila(n));
+    }
+
+    @PutMapping("/{id}/registrar-pago")
+    public ResponseEntity<Map<String, Object>> registrarPago(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        NominaCalculo n = nominaCalculoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Nómina no encontrada"));
+        if (!"APROBADA".equalsIgnoreCase(n.getEstado()))
+            throw new IllegalStateException("Solo se puede pagar una nómina en estado APROBADA");
+        String numeroTransaccion = body != null ? body.get("numeroTransaccion") : null;
+        if (numeroTransaccion == null || numeroTransaccion.isBlank())
+            throw new IllegalArgumentException("El número de transacción es obligatorio");
+        n.setNumeroTransaccion(numeroTransaccion);
+        n.setFechaPago(LocalDate.now());
+        n.setEstado("PAGADA");
+        n = nominaCalculoRepository.save(n);
+        return ResponseEntity.ok(mapFila(n));
+    }
+
+    private List<Map<String, Object>> mapListado(List<NominaCalculo> lista) {
+        return lista.stream().map(this::mapFila).collect(Collectors.toList());
+    }
+
+    private Map<String, Object> mapFila(NominaCalculo n) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", n.getId());
+        m.put("empleadoNombre", n.getEmpleadoNombre());
+        m.put("periodoInicio", n.getInicio());
+        m.put("periodoFin", n.getFin());
+        m.put("salarioNeto", n.getNetoPagar());
+        m.put("estado", n.getEstado());
+        m.put("fechaPago", n.getFechaPago());
+        return m;
     }
 
     // --- helpers ---

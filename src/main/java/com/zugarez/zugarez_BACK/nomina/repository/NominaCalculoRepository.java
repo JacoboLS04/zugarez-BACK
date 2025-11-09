@@ -9,4 +9,7 @@ import java.util.List;
 public interface NominaCalculoRepository extends JpaRepository<NominaCalculo, Long> {
     List<NominaCalculo> findByInicioGreaterThanEqualAndFinLessThanEqualOrderByCreadoEnDesc(LocalDate inicio, LocalDate fin);
     List<NominaCalculo> findByEmpleadoIdAndInicioGreaterThanEqualAndFinLessThanEqualOrderByCreadoEnDesc(Long empleadoId, LocalDate inicio, LocalDate fin);
+
+    List<NominaCalculo> findByEstadoOrderByCreadoEnDesc(String estado);
+    List<NominaCalculo> findByEmpleadoIdOrderByCreadoEnDesc(Long empleadoId);
 }
