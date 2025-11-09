@@ -60,11 +60,14 @@ public class MainSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
-                        .requestMatchers("/payment/webhook").permitAll() // ✅ Webhook público
-                        .requestMatchers("/payment/success").permitAll() // ✅ Callback de éxito
-                        .requestMatchers("/payment/failure").permitAll() // ✅ Callback de fallo
-                        .requestMatchers("/payment/pending").permitAll() // ✅ Callback pendiente
+                        .requestMatchers("/payment/webhook").permitAll()
+                        .requestMatchers("/payment/success").permitAll()
+                        .requestMatchers("/payment/failure").permitAll()
+                        .requestMatchers("/payment/pending").permitAll()
                         .requestMatchers("/api/empleados/**").permitAll() // TEMPORAL
+                        .requestMatchers("/api/asistencia/**").permitAll() // TEMPORAL
+                        .requestMatchers("/api/nomina/**").permitAll()     // TEMPORAL
+                        .requestMatchers("/api/reportes/**").permitAll()   // TEMPORAL
                         .requestMatchers("/payment/**").authenticated() // ✅ Requiere autenticación
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/**").authenticated()
