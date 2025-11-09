@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/nomina")
@@ -132,19 +133,23 @@ public class NominaController {
     @PutMapping("/{id}/estado")
     public ResponseEntity<Map<String, Object>> cambiarEstado(
             @PathVariable Long id,
-            @RequestBody CambioEstadoRequest req
+            @RequestBody(required = false) CambioEstadoRequest req
     ) {
+        if (req == null) req = new CambioEstadoRequest();
         var nomina = nominaCalculoRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Nómina no encontrada"));
 
         String from = nomina.getEstado() == null ? "CALCULADA" : nomina.getEstado().toUpperCase();
-        String to = (req.getEstado() == null ? "" : req.getEstado().toUpperCase()).trim();
+        String rawEstado = req.getEstado() == null ? "" : req.getEstado().trim();
+        String to = normalizarEstado(rawEstado);
 
+        if (to.isBlank()) {
+            throw new IllegalArgumentException("El campo 'estado' es obligatorio");
+        }
         if (!isTransicionValida(from, to)) {
             throw new IllegalStateException("Transición inválida: " + from + " → " + to);
         }
 
-        // Aplicar transición
         switch (to) {
             case "CALCULADA" -> {
                 nomina.setEstado("CALCULADA");
@@ -158,15 +163,16 @@ public class NominaController {
             }
             case "CANCELADA" -> {
                 nomina.setEstado("CANCELADA");
-                // mantiene fechas/num transacción en null
                 nomina.setFechaPago(null);
                 nomina.setNumeroTransaccion(null);
             }
             case "PAGADA" -> {
-                if (req.getNumeroTransaccion() == null || req.getNumeroTransaccion().isBlank()) {
-                    throw new IllegalArgumentException("El número de transacción es obligatorio para marcar como PAGADA");
+                String trx = (req.getNumeroTransaccion() == null || req.getNumeroTransaccion().isBlank())
+                        ? null : req.getNumeroTransaccion().trim();
+                if (trx == null) {
+                    throw new IllegalArgumentException("numeroTransaccion es obligatorio para estado PAGADA");
                 }
-                nomina.setNumeroTransaccion(req.getNumeroTransaccion().trim());
+                nomina.setNumeroTransaccion(trx);
                 nomina.setFechaPago(LocalDate.now());
                 nomina.setEstado("PAGADA");
             }
@@ -175,7 +181,6 @@ public class NominaController {
 
         nomina = nominaCalculoRepository.save(nomina);
 
-        // Respuesta estándar para la tabla
         Map<String, Object> resp = new LinkedHashMap<>();
         resp.put("id", nomina.getId());
         resp.put("empleadoNombre", nomina.getEmpleadoNombre());
@@ -185,24 +190,31 @@ public class NominaController {
         resp.put("estado", nomina.getEstado());
         resp.put("fechaPago", nomina.getFechaPago());
 
-        // Si se paga, añade objeto payout para modal de éxito con cuenta del empleado
         if ("PAGADA".equalsIgnoreCase(nomina.getEstado())) {
-            var emp = empleadoRepository.findById(nomina.getEmpleadoId())
-                    .orElse(null);
-            String banco = emp != null ? emp.getBanco() : null;
-            String cuenta = emp != null ? emp.getCuentaBancaria() : null;
-
-            Map<String, Object> payout = new LinkedHashMap<>();
+            var emp = empleadoRepository.findById(nomina.getEmpleadoId()).orElse(null);
+            Map<String,Object> payout = new LinkedHashMap<>();
             payout.put("success", true);
             payout.put("mensaje", "Transferencia iniciada al empleado");
-            payout.put("banco", banco != null ? banco : "-");
-            payout.put("cuenta", cuenta != null ? cuenta : "-");
+            payout.put("banco", emp != null ? emp.getBanco() : "-");
+            payout.put("cuenta", emp != null ? emp.getCuentaBancaria() : "-");
             payout.put("monto", nomina.getNetoPagar());
             payout.put("numeroTransaccion", nomina.getNumeroTransaccion());
             resp.put("payout", payout);
         }
-
         return ResponseEntity.ok(resp);
+    }
+
+    // Endpoint alternativo sin body: /api/nomina/{id}/estado/{estado}?numeroTransaccion=XXX
+    @PutMapping("/{id}/estado/{estado}")
+    public ResponseEntity<Map<String,Object>> cambiarEstadoPath(
+            @PathVariable Long id,
+            @PathVariable String estado,
+            @RequestParam(required = false) String numeroTransaccion
+    ) {
+        CambioEstadoRequest req = new CambioEstadoRequest();
+        req.setEstado(estado);
+        req.setNumeroTransaccion(numeroTransaccion);
+        return cambiarEstado(id, req);
     }
 
     private boolean isTransicionValida(String from, String to) {
@@ -286,6 +298,18 @@ public class NominaController {
             }
         }
         return BigDecimal.valueOf(Math.round(total * 100.0) / 100.0);
+    }
+
+    private String normalizarEstado(String s) {
+        if (s == null) return "";
+        String u = s.trim().toUpperCase();
+        return switch (u) {
+            case "CALCULADA","CALCULADO" -> "CALCULADA";
+            case "APROBADA","APROBADO" -> "APROBADA";
+            case "PAGADA","PAGADO" -> "PAGADA";
+            case "CANCELADA","CANCELADO" -> "CANCELADA";
+            default -> u; // deja pasar por si se amplía
+        };
     }
 
     @Data
