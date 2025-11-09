@@ -62,12 +62,14 @@ jobs:
       - name: Deploy to Cloud Run
         run: |
           IMAGE="${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GAR_REPOSITORY }}/${{ secrets.SERVICE_NAME }}:latest"
+          echo "Using runtime SA: ${{ secrets.GCP_RUNTIME_SA }}"
           gcloud run deploy "${{ secrets.SERVICE_NAME }}" \
             --image "$IMAGE" \
             --region "${{ secrets.GCP_REGION }}" \
             --platform managed \
             --port 8000 \
-            --allow-unauthenticated
+            --allow-unauthenticated \
+            --service-account "${{ secrets.GCP_RUNTIME_SA }}"
 
       - name: Health check
         run: |
