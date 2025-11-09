@@ -12,12 +12,14 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @EntityScan(basePackages = {
         "com.zugarez.model",                             // Dominio (Empleado, Puesto, etc.)
         "com.zugarez.zugarez_BACK.security.entity",       // Seguridad (UserEntity)
-        "com.zugarez.zugarez_BACK.CRUD.entity"            // CRUD (Product, DetallePedido)
+        "com.zugarez.zugarez_BACK.CRUD.entity",            // CRUD (Product, DetallePedido)
+        "com.zugarez.zugarez_BACK.inventory.entity"       // <-- añadido
 })
 @EnableJpaRepositories(basePackages = {
         "com.zugarez.repository",                        // Repos dominio
         "com.zugarez.zugarez_BACK.security.repository",  // Repos seguridad
-        "com.zugarez.zugarez_BACK.CRUD.repository"       // Repos CRUD (ProductRepository)
+        "com.zugarez.zugarez_BACK.CRUD.repository",       // Repos CRUD (ProductRepository)
+        "com.zugarez.zugarez_BACK.inventory.repository"  // <-- añadido
 })
 public class PersistenceScanConfig {
     // ...existing code...
