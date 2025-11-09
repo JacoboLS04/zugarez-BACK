@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.OffsetDateTime;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -22,19 +23,19 @@ public class AsistenciaController {
 
     @PostMapping(value = "/entrada", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Map<String, Object>> registrarEntrada(@RequestBody(required = false) EntradaRequest req) {
-        // Body opcional para evitar 500 si llega vacío o inválido
-        if (req == null) {
-            req = new EntradaRequest();
-        }
+        if (req == null) req = new EntradaRequest();
         log.info(">> Registrar entrada: empleadoId={}, turno={}, obs={}", req.getEmpleadoId(), req.getTurno(), req.getObservaciones());
 
-        Map<String, Object> resp = Map.of(
-                "empleadoId", req.getEmpleadoId(),
-                "turno", req.getTurno(),
-                "observaciones", req.getObservaciones(),
-                "horaEntrada", OffsetDateTime.now().toString(),
-                "status", "REGISTRADA"
-        );
+        String turno = req.getTurno() == null ? "GENERAL" : req.getTurno();
+        String obs = req.getObservaciones() == null ? "" : req.getObservaciones();
+
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("empleadoId", req.getEmpleadoId());
+        resp.put("turno", turno);
+        resp.put("observaciones", obs);
+        resp.put("horaEntrada", OffsetDateTime.now().toString());
+        resp.put("status", "REGISTRADA");
+
         return ResponseEntity.ok(resp);
     }
 
