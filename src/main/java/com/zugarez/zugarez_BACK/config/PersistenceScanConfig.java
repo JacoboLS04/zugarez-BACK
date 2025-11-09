@@ -2,26 +2,33 @@ package com.zugarez.zugarez_BACK.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
-/*
- * Fuerza el escaneo de paquetes fuera de com.zugarez.zugarez_BACK.*
- * Incluye controllers, services, repositories y entities en com.zugarez.*
- */
 @Configuration
-@ComponentScan(basePackages = {
-        "com.zugarez",              // cubre controller, service, dto, etc.
-        "com.zugarez.zugarez_BACK"  // mantiene el árbol original
-})
+@ComponentScan(
+        basePackages = {
+                "com.zugarez.controller",
+                "com.zugarez.service",
+                "com.zugarez.repository",
+                "com.zugarez.model",
+                "com.zugarez.dto",
+                "com.zugarez.zugarez_BACK"
+        },
+        excludeFilters = {
+                @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE,
+                        classes = { com.zugarez.exception.GlobalExceptionHandler.class }) // excluye el handler externo duplicado
+        }
+)
 @EntityScan(basePackages = {
         "com.zugarez.model",
-        "com.zugarez.zugarez_BACK"  // por si hay entidades dentro del paquete original
+        "com.zugarez.zugarez_BACK" // si hubiera entidades internas
 })
 @EnableJpaRepositories(basePackages = {
         "com.zugarez.repository",
-        "com.zugarez.zugarez_BACK"  // repos existentes originales
+        "com.zugarez.zugarez_BACK" // si hubiese repos internos
 })
 public class PersistenceScanConfig {
-    // ...sin lógica adicional...
+    // ...existing code...
 }

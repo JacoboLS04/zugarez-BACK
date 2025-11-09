@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler { // <-- nombre cambiado
 
     private Map<String, Object> body(String code, String message, Object details, String path) {
         Map<String, Object> m = new HashMap<>();
