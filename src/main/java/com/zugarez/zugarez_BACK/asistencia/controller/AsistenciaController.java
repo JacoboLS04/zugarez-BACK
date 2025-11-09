@@ -20,10 +20,14 @@ public class AsistenciaController {
 
     private static final Logger log = LoggerFactory.getLogger(AsistenciaController.class);
 
-    @PostMapping("/entrada")
-    public ResponseEntity<Map<String, Object>> registrarEntrada(@RequestBody EntradaRequest req) {
-        log.info(">> Registrar entrada: {}", req);
-        // Aquí podrías persistir asistencia; por ahora devolvemos un ack básico
+    @PostMapping(value = "/entrada", consumes = "application/json", produces = "application/json")
+    public ResponseEntity<Map<String, Object>> registrarEntrada(@RequestBody(required = false) EntradaRequest req) {
+        // Body opcional para evitar 500 si llega vacío o inválido
+        if (req == null) {
+            req = new EntradaRequest();
+        }
+        log.info(">> Registrar entrada: empleadoId={}, turno={}, obs={}", req.getEmpleadoId(), req.getTurno(), req.getObservaciones());
+
         Map<String, Object> resp = Map.of(
                 "empleadoId", req.getEmpleadoId(),
                 "turno", req.getTurno(),
